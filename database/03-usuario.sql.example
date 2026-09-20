@@ -1,0 +1,5 @@
+-- Administrador, una sola vez; sustituir contraseña y host ANTES de ejecutar.
+-- CREATE USER falla si existe: no modifica credenciales de un usuario previo.
+CREATE USER 'analitiq_lectura'@'localhost' IDENTIFIED BY 'REEMPLAZAR_POR_UN_SECRETO_LOCAL';
+GRANT SELECT ON analitiq_demo.* TO 'analitiq_lectura'@'localhost';
+-- No requiere FLUSH PRIVILEGES. En otro servidor restringir el host al de la aplicación.

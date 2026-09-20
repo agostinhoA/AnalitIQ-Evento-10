@@ -1,0 +1,14 @@
+<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
+<%@ taglib prefix="a" tagdir="/WEB-INF/tags" %>
+<fmt:setLocale value="es_AR" scope="request"/>
+<!doctype html>
+<html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Consulta de deudas · AnalitIQ</title><link rel="stylesheet" href="<c:url value='/assets/app.css'/>"></head>
+<body><a class="skip" href="#contenido">Ir al contenido</a>
+<aside class="sidebar"><a class="brand" href="<c:url value='/deudas'/>"><span class="brand-mark">+</span> Analit<span>IQ</span></a>
+<p class="sidebar-label">GESTIÓN ODONTOLÓGICA</p><nav aria-label="Principal"><a class="nav-active" href="<c:url value='/deudas'/>"><span aria-hidden="true">▤</span> Consulta de deudas</a></nav>
+<div class="sidebar-foot"><span class="dot"></span> Entorno de demostración<br><small>Información ficticia</small></div></aside>
+<div class="workspace"><header class="topbar"><span>Gestión financiera <span class="separator">/</span> Consulta de deudas</span><span class="readonly">Sólo lectura</span></header>
+<main id="contenido"><div class="eyebrow">PACIENTES · EVENTO 10</div>

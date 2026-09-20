@@ -1,0 +1,6 @@
+/target/
+/.tools/
+/tmp/
+/.local/
+/nbproject/private/
+*.log

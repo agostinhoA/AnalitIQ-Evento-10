@@ -1,0 +1,34 @@
+-- Nuevos casos ficticios del coloquio. Ejecutar UNA vez después de 01 y 02.
+-- Sólo INSERT, sin reemplazar registros. Ante cualquier error DETENER la ejecución
+-- y hacer ROLLBACK; no usar --force. IDs reservados 2101-2499 / DNI 45000001-45000002.
+USE analitiq_demo;
+SET NAMES utf8mb4;
+START TRANSACTION;
+INSERT INTO pacientes VALUES
+ ('45000001','Sofía','Molina','1990-01-01',NULL,'1100000021',NULL,NULL,'sofia.demo@example.invalid'),
+ ('45000002','Mateo','Vidal','1991-01-01',NULL,'1100000022',NULL,NULL,'mateo.demo@example.invalid');
+INSERT INTO tratamientos VALUES
+ (2101,1,'45000001','2026-01-01','2027-01-01','Alineación dental','Favorable','SI'),
+ (2102,2,'45000001','2026-02-01',NULL,'Reposición de pieza',NULL,'SI'),
+ (2103,3,'45000001','2026-03-01',NULL,NULL,NULL,'SI'),
+ (2104,1,'45000001','2025-01-01',NULL,NULL,NULL,'NO'),
+ (2105,3,'45000002','2025-01-01',NULL,NULL,NULL,'NO');
+INSERT INTO presupuestos VALUES
+ (2201,2101,1,60000.00,6),(2202,2102,1,40000.00,2),
+ (2203,2103,1,15000.00,1),(2204,2104,1,7000.00,1),(2205,2105,1,8000.00,1);
+INSERT INTO cuotas VALUES
+ (2301,2201,10000.00,1,'2026-08-31',1),
+ (2302,2201,10000.00,1,'2026-09-01',2),
+ (2303,2201,10000.00,1,'2026-09-15',3),
+ (2304,2201,10000.00,1,'2026-09-30',4),
+ (2305,2201,10000.00,1,'2026-10-01',5),
+ (2306,2201,10000.00,2,'2026-09-10',6),
+ (2307,2202,20000.00,2,'2026-09-15',1),
+ (2308,2202,20000.00,1,'2026-12-01',2),
+ (2309,2204,7000.00,1,'2026-09-15',1),
+ (2310,2205,8000.00,1,'2026-09-15',1);
+INSERT INTO pagos VALUES
+ (2401,1,10000.00,'2026-09-10',1,1.00),
+ (2402,2,20000.00,'2026-09-15',1,1.00);
+INSERT INTO cuotas_x_pagos VALUES (2306,2401),(2307,2402);
+COMMIT;
