@@ -22,7 +22,7 @@ class TratamientosActivosMySqlTest {
             assertEquals(1,ReglasTratamientos.inconsistencias(repetidos).size());
             var cuatro=dao.activos(c,"45000004");
             assertEquals(4,cuatro.size());
-            assertEquals(2,ReglasTratamientos.inconsistencias(cuatro).size());
+            assertEquals(1,ReglasTratamientos.inconsistencias(cuatro).size());
             assertTrue(dao.activos(c,"' OR 1=1 --").isEmpty());
         }
     }

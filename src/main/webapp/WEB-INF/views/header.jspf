@@ -5,10 +5,14 @@
 <fmt:setLocale value="es_AR" scope="request"/>
 <!doctype html>
 <html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Consulta de deudas · AnalitIQ</title><link rel="stylesheet" href="<c:url value='/assets/app.css'/>"></head>
+<title>Ver informe de deudas de un paciente · AnalitIQ</title>
+<link rel="stylesheet" href="<c:url value='/assets/app.css'/>">
+<link rel="stylesheet" href="<c:url value='/assets/theme.css'/>"></head>
 <body><a class="skip" href="#contenido">Ir al contenido</a>
-<aside class="sidebar"><a class="brand" href="<c:url value='/deudas'/>"><span class="brand-mark">+</span> Analit<span>IQ</span></a>
-<p class="sidebar-label">GESTIÓN ODONTOLÓGICA</p><nav aria-label="Principal"><a class="nav-active" href="<c:url value='/deudas'/>"><span aria-hidden="true">▤</span> Consulta de deudas</a></nav>
-<div class="sidebar-foot"><span class="dot"></span> Entorno de demostración<br><small>Información ficticia</small></div></aside>
-<div class="workspace"><header class="topbar"><span>Gestión financiera <span class="separator">/</span> Consulta de deudas</span><span class="readonly">Sólo lectura</span></header>
-<main id="contenido"><div class="eyebrow">PACIENTES · EVENTO 10</div>
+<header class="site-header"><div class="site-nav">
+<a class="brand" href="<c:url value='/deudas'/>" aria-label="AnalitIQ, inicio"><span class="brand-mark" aria-hidden="true">+</span>Analit<span>IQ</span></a>
+<nav aria-label="Principal"><a class="nav-active" href="<c:url value='/deudas'/>" aria-current="page"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>Consulta de deudas</a></nav>
+<span class="site-status"><span class="dot" aria-hidden="true"></span>Gestión odontológica</span>
+</div></header>
+<div class="workspace"><div class="topbar"><span>Pacientes <span class="separator">/</span> Informe de deudas</span><span class="readonly">Sólo lectura</span></div>
+<main id="contenido"><div class="eyebrow">GESTIÓN FINANCIERA</div>

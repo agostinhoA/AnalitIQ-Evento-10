@@ -1,14 +1,14 @@
-# AnalitIQ · Consulta de deudas
+# AnalitIQ · Ver informe de deudas de un paciente
 
-Proyecto Java web Maven, JSP/JSTL/EL, Servlets y JDBC. El evento 10 corregido permite consultar exclusivamente deudas de tratamientos activos de un paciente. Conserva las tecnologías y el estilo visual originales. No registra ni modifica pagos.
+Proyecto Java web Maven, JSP/JSTL/EL, Servlets y JDBC. Implementa la especificación del **23/09/2026**, que tiene prioridad sobre el alcance anterior del coloquio y el TP. Conserva arquitectura, dependencias, Tomcat y configuración externa. El [rediseño visual](docs/rediseno-visual.md) usa blanco, gris oscuro y rojo, con navegación superior y adaptación a móvil.
 
-Una cuota se muestra cuando está en estado **Adeuda**, pertenece a un tratamiento con **activo = SI**, vence dentro de **Desde/Hasta (ambos incluidos)** y su vencimiento es **hoy o anterior**. Las dos fechas son obligatorias. Una cuota futura no se muestra aunque esté impaga y dentro del rango. El día actual se calcula en Argentina y aparece en el informe.
+Se muestran únicamente cuotas en estado **Adeuda**, de tratamientos con **activo = SI**, cuya fecha de vencimiento esté dentro de **Desde/Hasta, ambos incluidos**. Ambas fechas son obligatorias. **No hay corte por hoy**: una cuota futura se incluye si está dentro del rango y sigue en Adeuda.
 
-Las deudas se agrupan por tratamiento y presupuesto. Se muestra el importe completo de cada cuota; no se calculan importes parciales. Se informa cuando un paciente tiene más de tres tratamientos activos o tipos activos repetidos, sin ocultarlos ni corregir los datos.
+El formulario admite DNI, nombre y apellido juntos, o identificación vacía para elegir de la lista completa. DNI y nombre/apellido simultáneos se rechazan. La lista completa exige selección incluso si contiene un único paciente; una búsqueda con criterio y una sola coincidencia genera el informe directamente. El nombre de tratamiento es opcional y se compara exactamente con el catálogo.
 
-Ruta principal: `/deudas`. La ruta previa `/pagos` abre el mismo evento corregido para conservar enlaces anteriores; ya no permite elegir consultas, tratamientos, ambos ni estados.
+El informe identifica una vez al paciente y al rango; muestra un bloque por tratamiento con cuotas coincidentes y las columnas Cuota, Fecha de vencimiento y Saldo pendiente. Cada bloque incluye cantidad y suma exacta de sus filas con BigDecimal. No hay bloques vacíos, importes parciales ni operaciones de pago. Los estados se consultan por su relación y nombre, sin fijar IDs numéricos.
 
-Detalles del cambio, archivos y ajustes pendientes del evento/DFD/ELP/diccionario: [coloquio del 17/09/2026](docs/coloquio-2026-09-17.md). Las interfaces de Lucid, página 7, no estaban disponibles; no se modificaron documentos externos.
+Ruta principal: `/deudas`; `/pagos` abre el mismo evento corregido. Detalles y archivos modificados: [especificación implementada](docs/evento10-2026-09-23.md). Las imágenes mencionadas en el pedido no estaban adjuntas; se conservó el estilo existente. El TP y los documentos externos no fueron modificados.
 
 ## Inicio en esta computadora
 
@@ -128,38 +128,43 @@ Todos los formularios, estilos y enlaces internos respetan el context path; no c
 
 El script `ejecutar-tomcat.ps1` crea su configuración al primer arranque. `-Port` se aplica en ese primer arranque; después, editar el conector de `.local/tomcat/conf/server.xml` con Tomcat detenido para cambiarlo. No publicar esa instancia local directamente.
 
+## Regla de tratamientos
+
+Un paciente puede tener cualquier cantidad de tratamientos registrados, incluidos históricos del mismo tipo. Sólo se admite un tratamiento **activo por tipo** para ese paciente. No se impone un máximo de tres: los tres tipos actuales del catálogo no son un límite de cantidad de tratamientos. El informe advierte duplicados activos sin modificar registros.
+
 ## Datos y recorridos para probar
 
-Los scripts 04 y 05 ya se importaron en esta computadora. No repetirlos. En otra base nueva, importar primero estructura y datos originales (01/02), después `04-datos-prueba-deudas.sql`. El archivo `05-datos-prueba-inconsistencias.sql` agrega casos deliberadamente inválidos y es opcional salvo para ejecutar toda la suite de integración. Ambos sólo agregan filas nuevas; no reemplazan ni actualizan registros anteriores.
+**En esta computadora no hay que ejecutar SQL ni reimportar datos.** Se reutiliza la demo existente, con los scripts 01/02/04/05 ya importados. Este cambio no modifica el esquema ni inserta/actualiza registros. En una instalación nueva, seguir la preparación anterior; 05 es opcional salvo para ejecutar todas las pruebas de integración.
 
-La búsqueda por nombre y apellido sigue siendo exacta, distingue tildes y mayúsculas. Salvo donde se indique, usar **Desde 01/09/2026, Hasta 15/09/2026**:
+Búsqueda de nombres/apellidos y tratamiento exacta, incluyendo mayúsculas y tildes. Valores existentes del catálogo: `Ortodoncia`, `Implante`, `Conducto`. Un tratamiento inexistente devuelve un informe sin cuotas, no una lista de pacientes.
+
+Salvo indicación distinta, usar **Desde 01/01/2026, Hasta 31/12/2027**, tratamiento vacío:
 
 | Entrada | Resultado esperado |
 |---|---|
-| DNI `30111222` | Juan Pérez; ortodoncia 101, presupuesto 401 y cuota adeudada 603 por 30.000. Las cuotas pagadas 601/602 y los pagos de consultas están excluidos |
-| Nombre `Juan`, apellido `Pérez` | Dos resultados con DNI 30111222 y 30999888. Al seleccionar se conserva el rango guardado en el servidor |
-| DNI `30999888` o `35666777` | Sin tratamientos activos |
-| Nombre `Lucía`, apellido `Gómez` | Coincidencia única, acceso directo, sin tratamientos activos; el tratamiento histórico está excluido |
-| DNI `45000001` | Sofía Molina: tres bloques activos (Ortodoncia, Implante, Conducto). Sólo Ortodoncia tiene cuotas coincidentes (2302 y 2303). Los otros bloques muestran el mensaje sin deudas |
-| DNI `45000002` | Mateo Vidal: sólo un tratamiento inactivo, por lo que no hay tratamientos activos aunque tenga una cuota impaga |
-| DNI `37888999` o `40123456` | Un bloque activo sin deudas en el rango; no se confunde con ausencia de tratamientos |
-| DNI `45000003` | Eva Ramos: aviso de tipos activos repetidos y ambos tratamientos visibles (script 05) |
-| DNI `45000004` | Nora Gil: aviso de máximo tres y de tipo repetido; los cuatro tratamientos siguen visibles (script 05) |
-| DNI `99999999` o `Nadie` / `Inexistente` | Sin coincidencias; permite otra búsqueda y conserva las fechas |
-| Fechas vacías, inválidas o Desde posterior a Hasta | Validación del servidor y HTTP 400 |
-| Selección de Juan manipulada para enviar `45000001` | HTTP 400; no permite acceder a Sofía |
+| DNI `30111222` | Juan Pérez, Ortodoncia: cuota 3 (603), cantidad 1, total 30.000,00; cuotas pagadas y consultas excluidas |
+| Nombre `Lucía`, apellido `Gómez` | Coincidencia única; informe directo con identificación/rango y mensaje sin cuotas |
+| Nombre `Juan`, apellido `Pérez` | Dos coincidencias, DNI 30111222 y 30999888; se exige seleccionar |
+| DNI, nombre y apellido vacíos | Lista de diez pacientes, cada uno con su DNI y botón Seleccionar; aún no se genera informe |
+| DNI `45000001` | Sofía Molina: Ortodoncia con 5 cuotas, total 50.000,00; Implante con 1 cuota, total 20.000,00. No aparece el Conducto sin cuotas |
+| DNI `45000001`, tratamiento `Implante` | Sólo Implante, cuota 2 (2308), vence 01/12/2026, total 20.000,00; aparece aunque esa fecha sea posterior a hoy |
+| DNI `45000001`, tratamiento `Conducto` o `No existe` | Identificación, rango y “No se encontraron cuotas pendientes para los criterios seleccionados”; ningún bloque |
+| DNI `45000001`, Desde 01/09/2026, Hasta 15/09/2026 | Ortodoncia, cuotas 2 y 3 (2302/2303), cantidad 2, total 20.000,00; ambas fechas límite incluidas |
+| DNI `45000001`, Desde/Hasta 15/09/2026 | Sólo cuota 3 (2303), cantidad 1, total 10.000,00 |
+| DNI `45000002`, `37888999`, `40123456` o `30999888` | Informe sin cuotas; tratamientos inactivos/sin cuotas no crean bloques vacíos |
+| DNI `45000003` o `45000004` | Avisos sólo por tipos activos repetidos (datos ficticios de 05); no existe límite numérico de tratamientos |
+| DNI `99999999` o `Nadie` / `Inexistente` | “No se encontraron pacientes”; permite corregir los campos y no muestra el informe anterior |
+| DNI junto con nombre/apellido; sólo nombre; sólo apellido | HTTP 400 y explicación; no se interpreta como lista completa |
+| Fechas vacías, inválidas o Desde posterior a Hasta | HTTP 400; no se ejecuta una consulta con rango inválido |
+| Selección de homónimos alterada para enviar DNI `45000001` | HTTP 400; sólo se permiten los pacientes recuperados por esa búsqueda |
 
-Para probar los límites, buscar `45000001` del **01/09/2026 al 15/09/2026**: aparecen las cuotas de ambas fechas. Cambiar a **15/09/2026–15/09/2026**: aparece sólo la cuota 2303. Aplicar **31/08/2026–31/08/2026**: aparece sólo la 2301. Las pagadas siguen excluidas.
+Tratamiento y fechas se guardan en el servidor durante la selección. Cambiar los campos ocultos o enviar otros filtros en esa solicitud no los reemplaza. “Modificar filtros” → “Aplicar filtro” conserva el paciente y crea otro flujo, sin alterar informes abiertos en otras pestañas. Un filtro inválido muestra un error y conserva el informe anterior, identificado con sus criterios. “Cambiar paciente” o “Iniciar otra búsqueda” abre un formulario nuevo y no reutiliza la selección previa. Cada flujo vence a los 15 minutos; la sesión a los 20 de inactividad.
 
-Si hoy es 18/09/2026, la cuota 2304 (vence el 30/09) todavía no aparece incluso con Hasta 30/09. El 30/09 se incluirá como deuda de ese día si sigue en estado Adeuda. Las pruebas JDBC controlan el reloj para comprobar ese comportamiento de forma reproducible, sin cambiar la fecha de la computadora.
-
-«Aplicar filtro» conserva el paciente validado y crea un flujo nuevo, de modo que un informe abierto en otra pestaña conserva su rango. Si el rango es inválido, se muestra el error y se conserva el informe anterior identificado con su rango aplicado. «Cambiar paciente» abre una búsqueda nueva. Cada flujo vence a los 15 minutos y la sesión a los 20 de inactividad.
-
-Los importes de presupuestos y cuotas no tienen moneda definida en el modelo; se muestran sin inventar un símbolo. Las relaciones de pagos anteriores se conservan, pero este evento no las usa para descontar importes ni representar pagos parciales.
+**Moneda:** ni cuotas ni presupuestos tienen un campo de moneda; sólo los pagos lo tienen. Los totales son sumas de importes registrados por tratamiento, sin símbolo monetario ni conversiones. No se infiere la moneda de pagos excluidos del informe ni se suman pagos en distintas monedas. El modelo no permite certificar una totalización multimoneda: antes de incorporar esa posibilidad se necesita definir moneda de presupuesto/cuota y una migración explícita.
 
 ## Pruebas reproducibles
 
-`mvn clean verify` ejecuta las pruebas unitarias. Para activar todas las pruebas de integración sobre la demo con los scripts 01/02/04/05:
+`mvn clean verify` ejecuta las pruebas unitarias. Para todas las pruebas JDBC, usando la demo con scripts 01/02/04/05:
 
 ```powershell
 $env:ANALITIQ_CONFIG = (Resolve-Path '.local/analitiq.properties').Path
@@ -168,17 +173,17 @@ $env:ANALITIQ_TEST_DEUDAS = '1'
 mvn clean verify
 ```
 
-Se usa MySQL real y el usuario de sólo lectura. Las pruebas JDBC usan un Clock fijo en Java para validar ambos límites, vencimientos de hoy, cuotas futuras y la zona horaria Argentina. No hay un parámetro HTTP que permita alterar el día de corte. También se conserva la prueba de regresión del servicio anterior de pagos y la comprobación del rechazo de UPDATE.
+Si Maven no está en PATH, usar su ruta indicada en “Abrir en NetBeans”. Se usa MySQL real y el usuario de lectura. Se prueban selección explícita en lista de un único paciente, filtros, inclusividad, cuotas futuras, estados, agrupación, cantidades, totales decimales e inconsistencias. Permanece la prueba de regresión del servicio anterior y la comprobación de rechazo de UPDATE.
 
-Con Tomcat iniciado y Python 3 disponible:
+Con Tomcat iniciado y Python 3:
 
 ```powershell
 python scripts/probar-http.py http://127.0.0.1:8080/analitiq
 ```
 
-La suite HTTP prueba JSP/Servlet/MySQL reales: búsqueda cero/uno/varios, validación de selección, rango conservado, filtros inclusivos, exclusiones, agrupación, tratamientos vacíos, inconsistencias, sesiones y pestañas separadas, CSRF, escape HTML y concurrencia. Está preparada para las fechas ficticias de 2026 y debe ejecutarse a partir del 15/09/2026. La comprobación de cuotas futuras se adapta al día real del servidor de pruebas (Argentina).
+La suite prueba formularios/JSP/Servlet/MySQL reales, validación, lista completa, homónimos, conservación de filtros, ausencia de datos anteriores, tratamiento opcional, exclusiones, fechas, totales/cantidades, sesiones, CSRF, escape HTML y concurrencia. Los resultados son independientes del día actual; los datos ficticios tienen fechas de 2026.
 
-Los resultados Maven están en `target/surefire-reports`. La comprobación final y sus límites se documentan en [verificación](docs/verificacion.md).
+Resultados: **21 pruebas Java y 20 HTTP aprobadas** el 23/09/2026. Reportes en `target/surefire-reports` y detalles en [verificación](docs/verificacion.md).
 
 ## Estructura y mantenimiento
 

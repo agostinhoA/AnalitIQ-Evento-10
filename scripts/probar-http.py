@@ -1,8 +1,7 @@
-"""Pruebas HTTP del evento 10 corregido. Requiere MySQL demo y scripts 01, 02, 04 y 05.
+"""Pruebas HTTP del evento 10 (23/09/2026). MySQL demo con scripts 01/02/04/05.
 Uso: python scripts/probar-http.py http://127.0.0.1:8080/analitiq
 """
 import concurrent.futures
-import datetime as dt
 import http.cookiejar
 import re
 import sys
@@ -10,9 +9,11 @@ import unittest
 import urllib.error
 import urllib.parse
 import urllib.request
+from decimal import Decimal
 
 BASE = sys.argv.pop(1).rstrip('/') if len(sys.argv) > 1 else 'http://127.0.0.1:8080/analitiq'
-HOY = dt.datetime.now(dt.timezone(dt.timedelta(hours=-3))).date()
+TITULO = 'Ver informe de deudas de un paciente'
+VACIO = 'No se encontraron cuotas pendientes para los criterios seleccionados'
 
 def flujo(url):
     return urllib.parse.parse_qs(urllib.parse.urlparse(url).query)['busqueda'][0]
@@ -48,9 +49,9 @@ class Browser:
     def post(self, **fields):
         return self.request('/deudas', {'csrf': self.csrf, **fields})
 
-    def search(self, dni='', nombre='', apellido='', desde='2026-09-01', hasta='2026-09-30', **extras):
-        return self.post(accion='buscar', modo='dni' if dni else 'nombre', dni=dni,
-                         nombre=nombre, apellido=apellido, desde=desde, hasta=hasta, **extras)
+    def search(self, dni='', nombre='', apellido='', tratamiento='', desde='2026-09-01', hasta='2026-09-30', **extras):
+        return self.post(accion='buscar', dni=dni, nombre=nombre, apellido=apellido,
+                         tratamiento=tratamiento, desde=desde, hasta=hasta, **extras)
 
 class FlujosHttp(unittest.TestCase):
     def setUp(self):
@@ -59,38 +60,65 @@ class FlujosHttp(unittest.TestCase):
     def test_dni_unico_excluye_consultas_y_pagadas(self):
         status, body, _, headers = self.b.search(dni='30111222', tipo='CONSULTAS', estado='Pagada')
         self.assertEqual(200, status)
-        self.assertIn('Deudas de tratamientos activos', body)
+        self.assertIn(TITULO, body)
         self.assertEqual(['603'], cuotas(body))
-        for text in ['Consulta #301', 'Pago #501', 'Pago #503', 'data-cuota="601"', 'data-cuota="602"', 'name="tipo"', 'name="estado"']:
+        for text in ['Consulta #301', 'Pago #501', 'Pago #503', 'data-cuota="601"', 'data-cuota="602"', 'name="tipo"', 'name="estado"', 'Monto total del presupuesto']:
             self.assertNotIn(text, body)
         self.assertIn('30.000,00', body)
+        self.assertIn('data-total="30000.00"', body)
         self.assertNotIn('Ã', body)
         self.assertEqual('no-store', headers['Cache-Control'])
 
-    def test_nombre_unico_sin_tratamientos_activos(self):
+    def test_nombre_unico_genera_informe_directo(self):
         status, body, _, _ = self.b.search(nombre='Lucía', apellido='Gómez')
         self.assertEqual(200, status)
-        self.assertIn('Este paciente no tiene tratamientos activos.', body)
+        self.assertIn(VACIO, body)
+        self.assertIn('<strong>32444555</strong>', body)
         self.assertEqual({}, bloques(body))
-        self.assertNotIn('Seleccioná al paciente', body)
+        self.assertNotIn('Seleccioná al paciente.', body)
 
-    def test_sin_coincidencias_conserva_fechas(self):
+    def test_sin_criterio_lista_completa_y_espera_seleccion(self):
+        status, body, url, _ = self.b.search(tratamiento='Implante', desde='2026-01-01', hasta='2027-12-31')
+        self.assertEqual(200, status)
+        self.assertIn('Lista de pacientes', body)
+        self.assertEqual(10, len(re.findall(r'class="patient-option"', body)))
+        self.assertEqual([], cuotas(body))
+        self.assertNotIn('report-header', body)
+        status, body, _, _ = self.b.post(accion='seleccionar', busqueda=flujo(url), dni='45000001',
+                                       tratamiento='Ortodoncia', desde='1900-01-01', hasta='1900-01-01')
+        self.assertEqual(200, status)
+        self.assertEqual(['2308'], cuotas(body))
+        self.assertEqual({'2102'}, set(bloques(body)))
+        self.assertIn('value="Implante"', body)
+        self.assertIn('value="2027-12-31"', body)
+
+    def test_sin_coincidencias_limpia_informe_y_conserva_campos(self):
+        self.b.search(dni='30111222')
         for fields in [{'dni': '99999999'}, {'nombre': 'Nadie', 'apellido': 'Inexistente'}]:
-            status, body, _, _ = self.b.search(**fields)
+            status, body, _, _ = self.b.search(tratamiento='Ortodoncia', **fields)
             self.assertEqual(200, status)
-            self.assertIn('No se encontró un paciente', body)
+            self.assertIn('No se encontraron pacientes', body)
             self.assertIn('value="2026-09-01"', body)
             self.assertIn('value="2026-09-30"', body)
+            self.assertIn('value="Ortodoncia"', body)
+            self.assertNotIn('report-header', body)
+            self.assertEqual([], cuotas(body))
+            for valor in fields.values():
+                self.assertIn('value="'+valor+'"', body)
 
-    def test_homonimos_conservan_rango_aunque_se_manipule(self):
-        status, body, url, _ = self.b.search(nombre='Juan', apellido='Pérez', desde='2026-09-01', hasta='2026-09-01')
+    def test_homonimos_conservan_filtros_aunque_se_manipulen(self):
+        status, body, url, _ = self.b.search(nombre='Juan', apellido='Pérez', tratamiento='Ortodoncia',
+                                          desde='2026-09-01', hasta='2026-09-01')
         self.assertEqual(200, status)
-        for text in ['Seleccioná al paciente', '30111222', '30999888', '01/09/2026']:
+        for text in ['Seleccioná al paciente.', '30111222', '30999888', '01/09/2026', 'Ortodoncia']:
             self.assertIn(text, body)
+        self.assertEqual(2, len(re.findall(r'class="patient-option"', body)))
+        self.assertEqual([], cuotas(body))
         status, body, _, _ = self.b.post(accion='seleccionar', busqueda=flujo(url), dni='30111222',
-                                        desde='1900-01-01', hasta='1900-01-01', tipo='CONSULTAS')
+                                       tratamiento='Implante', desde='1900-01-01', hasta='1900-01-01')
         self.assertEqual(200, status)
         self.assertEqual(['603'], cuotas(body))
+        self.assertIn('value="Ortodoncia"', body)
         self.assertIn('value="2026-09-01"', body)
         self.assertNotIn('value="1900-01-01"', body)
 
@@ -99,20 +127,20 @@ class FlujosHttp(unittest.TestCase):
         status, body, _, _ = self.b.post(accion='seleccionar', busqueda=flujo(url), dni='45000001')
         self.assertEqual(400, status)
         self.assertIn('Seleccioná un paciente de los resultados', body)
-        self.assertNotIn('data-tratamiento="2101"', body)
+        self.assertEqual([], cuotas(body))
         self.assertEqual(200, self.b.post(accion='seleccionar', busqueda=flujo(url), dni='30999888')[0])
 
-    def test_agrupa_tres_activos_con_bloques_vacios(self):
+    def test_solo_bloques_con_cuotas_y_tabla_solicitada(self):
         status, body, _, _ = self.b.search(dni='45000001', hasta='2026-09-15')
         self.assertEqual(200, status)
         grupos = bloques(body)
-        self.assertEqual({'2101', '2102', '2103'}, set(grupos))
+        self.assertEqual({'2101'}, set(grupos))
         self.assertEqual(['2302', '2303'], cuotas(grupos['2101']))
-        for codigo in ['2102', '2103']:
-            self.assertIn('Este tratamiento activo no tiene deudas en el rango seleccionado.', grupos[codigo])
-            self.assertEqual([], cuotas(grupos[codigo]))
-        self.assertNotIn('data-cuota="2306"', body)
-        self.assertNotIn('data-tratamiento="2104"', body)
+        self.assertIn('Saldo pendiente', body)
+        self.assertNotIn('Estado registrado', body)
+        self.assertIn('data-cantidad="2"', body)
+        self.assertIn('data-total="20000.00"', body)
+        self.assertEqual(1, body.count('class="patient-card report-header"'))
 
     def test_rango_inclusivo_y_un_solo_dia(self):
         _, body, _, _ = self.b.search(dni='45000001', desde='2026-09-01', hasta='2026-09-15')
@@ -120,26 +148,45 @@ class FlujosHttp(unittest.TestCase):
         _, body, _, _ = self.b.search(dni='45000001', desde='2026-09-15', hasta='2026-09-15')
         self.assertEqual(['2303'], cuotas(body))
 
-    def test_fechas_futuras_no_son_deudas(self):
-        fechas = {'2301':'2026-08-31','2302':'2026-09-01','2303':'2026-09-15',
-                  '2304':'2026-09-30','2305':'2026-10-01','2308':'2026-12-01'}
+    def test_sin_corte_por_hoy_orden_cantidades_totales_y_no_duplicados(self):
         _, body, _, _ = self.b.search(dni='45000001', desde='2026-01-01', hasta='2027-12-31')
-        expected = [id_ for id_, fecha in fechas.items() if dt.date.fromisoformat(fecha) <= HOY]
-        self.assertEqual(expected, cuotas(body))
-        tomorrow = (HOY + dt.timedelta(days=1)).isoformat()
-        _, body, _, _ = self.b.search(dni='45000001', desde=tomorrow, hasta=tomorrow)
-        self.assertEqual([], cuotas(body))
-        self.assertEqual(3, len(bloques(body)))
+        self.assertEqual(['2301', '2302', '2303', '2304', '2305', '2308'], cuotas(body))
+        self.assertEqual(6, len(set(cuotas(body))))
+        grupos = bloques(body)
+        self.assertEqual({'2101','2102'}, set(grupos))
+        for id_, grupo in grupos.items():
+            rows = re.findall(r'<tr data-cuota=.*?</tr>', grupo, re.S)
+            amounts = re.findall(r'class="numeric amount">([\d.,]+)</td>', grupo)
+            suma = sum((Decimal(x.replace('.','').replace(',','.')) for x in amounts), Decimal('0'))
+            total = Decimal(re.search(r'data-total="([^"]+)"', grupo).group(1))
+            cantidad = int(re.search(r'data-cantidad="(\d+)"', grupo).group(1))
+            self.assertEqual(len(rows), cantidad)
+            self.assertEqual(suma, total)
+            self.assertEqual(Decimal('50000.00') if id_=='2101' else Decimal('20000.00'), total)
+            fechas = re.findall(r'<td>(\d{2}/\d{2}/\d{4})</td>', grupo)
+            orden = ['-'.join(reversed(f.split('/'))) for f in fechas]
+            self.assertEqual(sorted(orden), orden)
+        _, body, _, _ = self.b.search(dni='45000001', desde='2026-12-01', hasta='2026-12-01')
+        self.assertEqual(['2308'], cuotas(body))
+
+    def test_tratamiento_especifico_y_nombre_inexistente(self):
+        _, body, _, _ = self.b.search(dni='45000001', tratamiento='Implante', desde='2026-01-01', hasta='2027-12-31')
+        self.assertEqual(['2308'], cuotas(body))
+        for nombre in ['Conducto', 'No existe', "%' OR 1=1 --"]:
+            status, body, _, _ = self.b.search(dni='45000001', tratamiento=nombre)
+            self.assertEqual(200, status)
+            self.assertIn(VACIO, body)
+            self.assertEqual({}, bloques(body))
 
     def test_aplicar_filtro_conserva_paciente_y_otra_pestana(self):
         _, _, anterior, _ = self.b.search(dni='45000001', hasta='2026-09-15')
-        status, body, nuevo, _ = self.b.post(accion='filtrar', busqueda=flujo(anterior),
-                                            desde='2026-08-31', hasta='2026-08-31', dni='30111222')
+        status, body, nuevo, _ = self.b.post(accion='filtrar', busqueda=flujo(anterior), tratamiento='Implante',
+                                            desde='2026-01-01', hasta='2027-12-31', dni='30111222')
         self.assertEqual(200, status)
         self.assertNotEqual(anterior, nuevo)
         self.assertIn('<strong>45000001</strong>', body)
-        self.assertEqual(['2301'], cuotas(body))
-        self.assertEqual(['2302', '2303'], cuotas(self.b.get(anterior)[1]))
+        self.assertEqual(['2308'], cuotas(body))
+        self.assertEqual(['2302','2303'], cuotas(self.b.get(anterior)[1]))
 
     def test_rechaza_filtro_invertido_sin_cambiar_informe(self):
         _, _, url, _ = self.b.search(dni='45000001', hasta='2026-09-15')
@@ -149,28 +196,32 @@ class FlujosHttp(unittest.TestCase):
         self.assertEqual(['2302', '2303'], cuotas(body))
         self.assertEqual(['2302', '2303'], cuotas(self.b.get(url)[1]))
 
-    def test_rango_obligatorio_formato_y_validacion_servidor(self):
+    def test_rango_obligatorio_y_calendario(self):
         for desde, hasta in [('', '2026-09-18'), ('2026-09-18', ''), ('2026-09-20', '2026-09-18'),
                              ('2026-02-30','2026-09-18'), ("2026-09-01' OR 1=1 --",'2026-09-18')]:
             self.assertEqual(400, self.b.search(dni='30111222', desde=desde, hasta=hasta)[0])
-        self.assertEqual(400, self.b.post(accion='buscar', modo='dni', dni='30111222')[0])
+        self.assertEqual(400, self.b.post(accion='buscar', dni='30111222')[0])
 
-    def test_inconsistencias_no_ocultan_registros(self):
-        for dni, cantidad in [('45000003',2),('45000004',4)]:
-            status, body, _, _ = self.b.search(dni=dni)
+    def test_inconsistencias_avisadas_sin_bloques_vacios(self):
+        for dni in ['45000003','45000004']:
+            status, body, _, _ = self.b.search(dni=dni, tratamiento='Implante')
             self.assertEqual(200, status)
-            self.assertEqual(cantidad,len(bloques(body)))
+            self.assertEqual({}, bloques(body))
             self.assertIn('Inconsistencia:', body)
-        self.assertIn('máximo permitido es 3', body)
+            self.assertIn(VACIO, body)
+            self.assertEqual(1, body.count('Inconsistencia:'))
+            self.assertIn('Sólo se permite un tratamiento activo por tipo', body)
+            self.assertNotIn('máximo permitido', body)
 
-    def test_sin_activos_es_distinto_de_sin_deuda(self):
-        for dni in ['30999888','35666777','45000002']:
+    def test_sin_deudas_con_identificacion_y_rango(self):
+        for dni in ['30999888','35666777','45000002','37888999','40123456']:
             _, body, _, _ = self.b.search(dni=dni)
-            self.assertIn('Este paciente no tiene tratamientos activos.', body)
-        for dni in ['37888999','40123456']:
-            _, body, _, _ = self.b.search(dni=dni)
-            self.assertEqual(1,len(bloques(body)))
-            self.assertIn('Este tratamiento activo no tiene deudas en el rango seleccionado.', body)
+            self.assertIn(VACIO, body)
+            self.assertIn('<strong>'+dni+'</strong>', body)
+            self.assertIn('01/09/2026', body)
+            self.assertIn('30/09/2026', body)
+            self.assertEqual({}, bloques(body))
+            self.assertNotIn('No se encontraron pacientes', body)
 
     def test_sesiones_y_solicitudes_ajenas(self):
         _, _, url, _ = self.b.search(dni='30111222')
@@ -180,12 +231,23 @@ class FlujosHttp(unittest.TestCase):
         self.assertEqual(400, self.b.get('/deudas?busqueda=inventado')[0])
         self.assertEqual(403, self.b.post(accion='buscar', csrf='invalido')[0])
 
-    def test_validacion_y_escape(self):
+    def test_validacion_criterios_contradictorios_incompletos_escape(self):
         for fields in [{'dni': "' OR 1=1 --"}, {'nombre': '<script>alert(1)</script>', 'apellido':'Pérez'},
-                       {'nombre':'Juan','apellido':''}]:
+                       {'nombre':'Juan'}, {'apellido':'Pérez'}, {'dni':'30111222','nombre':'Juan','apellido':'Pérez'},
+                       {'dni':'30111222','nombre':'Juan'}, {'tratamiento':'x'*31}]:
             status, body, _, _ = self.b.search(**fields)
             self.assertEqual(400, status)
             self.assertNotIn('<script>alert(1)</script>', body)
+            self.assertNotIn('Lista de pacientes', body)
+
+    def test_nueva_busqueda_no_reutiliza_seleccion(self):
+        self.b.search(dni='45000001')
+        _, body, _, _ = self.b.get('/deudas')
+        self.assertNotIn('45000001', body)
+        _, body, _, _ = self.b.search()
+        self.assertIn('Lista de pacientes', body)
+        self.assertEqual([], cuotas(body))
+        self.assertNotIn('report-header', body)
 
     def test_concurrencia(self):
         def run(dni):
@@ -198,11 +260,10 @@ class FlujosHttp(unittest.TestCase):
         for path in ['/', '/pagos', '/deudas']:
             status, body, _, _ = self.b.get(path)
             self.assertEqual(200,status)
-            self.assertIn('Consulta de deudas',body)
+            self.assertIn(TITULO,body)
             self.assertNotIn('name="tipo"',body)
             self.assertNotIn('name="estado"',body)
         self.assertEqual(404,self.b.get('/WEB-INF/views/informe.jsp')[0])
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)
-

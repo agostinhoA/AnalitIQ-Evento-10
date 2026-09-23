@@ -6,13 +6,13 @@ import java.util.*;
 
 public final class PacienteDao {
     public List<Paciente> buscar(Connection c, CriterioBusqueda criterio) throws SQLException {
-        String sql = "SELECT dni_paciente,nombre_paciente,apellido_paciente FROM pacientes WHERE "
-            + (criterio.dni() != null ? "dni_paciente = ?" : "nombre_paciente = ? AND apellido_paciente = ?")
+        String sql = "SELECT dni_paciente,nombre_paciente,apellido_paciente FROM pacientes"
+            + (criterio.esListado() ? "" : criterio.dni() != null ? " WHERE dni_paciente = ?" : " WHERE nombre_paciente = ? AND apellido_paciente = ?")
             + " ORDER BY apellido_paciente,nombre_paciente,dni_paciente";
         try (PreparedStatement s = c.prepareStatement(sql)) {
             s.setQueryTimeout(10);
             if (criterio.dni() != null) s.setString(1, criterio.dni());
-            else { s.setString(1, criterio.nombre()); s.setString(2, criterio.apellido()); }
+            else if (!criterio.esListado()) { s.setString(1, criterio.nombre()); s.setString(2, criterio.apellido()); }
             try (ResultSet r = s.executeQuery()) {
                 List<Paciente> result = new ArrayList<>();
                 while (r.next()) result.add(new Paciente(r.getString(1),r.getString(2),r.getString(3)));

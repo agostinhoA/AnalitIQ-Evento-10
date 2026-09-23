@@ -1,64 +1,38 @@
 package ar.com.analitiq.dao;
 
 import ar.com.analitiq.model.*;
-import java.math.BigDecimal;
 import java.sql.*;
-import java.time.LocalDate;
 import java.util.*;
 
 public final class DeudasDao {
-    /** No se une cuotas_x_pagos: cada cuota aparece exactamente una vez. */
-    public Map<Long,List<Presupuesto>> presupuestosConDeudas(Connection c, String dni,
-            RangoFechas rango, LocalDate hoy) throws SQLException {
-        String sql = """
-            SELECT t.codigo_tratamiento,p.codigo_presupuesto,p.monto_total,p.cantidad_cuotas,
-                   pe.nombre_periodo_pago,cu.codigo_cuota,cu.nro_cuota,cu.monto_cuota,
+    /** Sin JOIN a pagos: una fila por cuota, con saldo completo y sin corte por hoy. */
+    public Map<Long,List<Cuota>> cuotasConDeuda(Connection c,String dni,FiltrosDeuda filtros) throws SQLException {
+        String sql="""
+            SELECT t.codigo_tratamiento,cu.codigo_cuota,cu.nro_cuota,cu.monto_cuota,
                    ec.tipo_estado,cu.fecha_vencimiento
             FROM tratamientos t
+            JOIN tipos_tratamientos tt ON tt.codigo_tipo_tratamiento=t.codigo_tipo_tratamiento
             JOIN presupuestos p ON p.codigo_tratamiento=t.codigo_tratamiento
-            JOIN periodos_de_pagos pe ON pe.codigo_periodo_pago=p.codigo_periodo_pago
             JOIN cuotas cu ON cu.codigo_presupuesto=p.codigo_presupuesto
             JOIN estados_cuotas ec ON ec.codigo_estado_cuota=cu.codigo_estado_cuota
             WHERE t.dni_paciente=? AND t.activo=? AND ec.tipo_estado=?
-              AND cu.fecha_vencimiento >= ? AND cu.fecha_vencimiento <= ?
-              AND cu.fecha_vencimiento <= ?
-            ORDER BY t.codigo_tratamiento,p.codigo_presupuesto,cu.nro_cuota,cu.codigo_cuota
+              AND cu.fecha_vencimiento>=? AND cu.fecha_vencimiento<=?
             """;
-        Map<Long,Map<Long,PresupuestoFilas>> filas = new LinkedHashMap<>();
-        try (PreparedStatement s = c.prepareStatement(sql)) {
+        boolean porNombre=!filtros.getTratamiento().isEmpty();
+        if(porNombre) sql+=" AND tt.nombre_tratamiento=? ";
+        sql+=" ORDER BY t.codigo_tratamiento,cu.fecha_vencimiento,cu.nro_cuota,cu.codigo_cuota";
+        Map<Long,List<Cuota>> resultado=new LinkedHashMap<>();
+        try(PreparedStatement s=c.prepareStatement(sql)) {
             s.setString(1,dni); s.setString(2,"SI"); s.setString(3,"Adeuda");
-            s.setDate(4,rango.getDesdeFecha()); s.setDate(5,rango.getHastaFecha());
-            s.setDate(6,java.sql.Date.valueOf(hoy)); s.setQueryTimeout(10);
-            try (ResultSet r = s.executeQuery()) {
-                while (r.next()) {
-                    var porPresupuesto = filas.computeIfAbsent(r.getLong(1), k -> new LinkedHashMap<>());
-                    long codigo = r.getLong(2);
-                    PresupuestoFilas presupuesto = porPresupuesto.get(codigo);
-                    if (presupuesto == null) {
-                        presupuesto = new PresupuestoFilas(codigo,r.getBigDecimal(3),r.getInt(4),r.getString(5));
-                        porPresupuesto.put(codigo,presupuesto);
-                    }
-                    presupuesto.cuotas.add(new Cuota(r.getLong(6),r.getInt(7),r.getBigDecimal(8),
-                        r.getString(9),r.getDate(10),List.of()));
-                }
+            s.setDate(4,filtros.getRango().getDesdeFecha()); s.setDate(5,filtros.getRango().getHastaFecha());
+            if(porNombre) s.setString(6,filtros.getTratamiento());
+            s.setQueryTimeout(10);
+            try(ResultSet r=s.executeQuery()) {
+                while(r.next()) resultado.computeIfAbsent(r.getLong(1),k -> new ArrayList<>())
+                    .add(new Cuota(r.getLong(2),r.getInt(3),r.getBigDecimal(4),r.getString(5),r.getDate(6),List.of()));
             }
         }
-        Map<Long,List<Presupuesto>> resultado = new LinkedHashMap<>();
-        filas.forEach((tratamiento,presupuestos) -> resultado.put(tratamiento,
-            presupuestos.values().stream().map(PresupuestoFilas::modelo).toList()));
         return resultado;
-    }
-
-    private static final class PresupuestoFilas {
-        final long codigo;
-        final BigDecimal monto;
-        final int cantidad;
-        final String periodo;
-        final List<Cuota> cuotas = new ArrayList<>();
-        PresupuestoFilas(long codigo, BigDecimal monto, int cantidad, String periodo) {
-            this.codigo=codigo; this.monto=monto; this.cantidad=cantidad; this.periodo=periodo;
-        }
-        Presupuesto modelo() { return new Presupuesto(codigo,monto,cantidad,periodo,cuotas); }
     }
 
     /** No LIMIT: las inconsistencias deben ser visibles, nunca ocultarse. */

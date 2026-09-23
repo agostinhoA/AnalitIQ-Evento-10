@@ -1,3 +1,5 @@
+> Referencia histórica. Para el alcance vigente ver [evento 10 del 23/09/2026](evento10-2026-09-23.md): incluye cuotas Adeuda futuras en rango, listado opcional de pacientes, filtro por tratamiento y no muestra bloques vacíos.
+
 # Fuente, alcance y decisiones
 
 > Documento histórico de la primera entrega. La consulta de pagos, el selector de tipo y la inclusión de tratamientos inactivos descritos aquí quedaron sustituidos por [el alcance del coloquio](coloquio-2026-09-17.md): sólo deudas de tratamientos activos con rango obligatorio por vencimiento. Se mantienen las decisiones de nombres/esquema, la búsqueda exacta y la ausencia de moneda en cuotas y presupuestos. Este archivo no implica que se haya modificado el PDF externo.

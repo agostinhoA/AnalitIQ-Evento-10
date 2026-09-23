@@ -1,43 +1,54 @@
-# Verificación de la entrega
+# Verificación del evento 10
 
-Fecha local: 18 de septiembre de 2026. Windows 11, Java 17.0.12, Maven 3.9.3, MySQL 8.4.7, Tomcat 9.0.122.
+Fecha: 23/09/2026. Windows, Java 17.0.12, Maven 3.9.3 de NetBeans 19, MySQL WAMP 8.4.7 y Tomcat 9.0.122. Resultado correspondiente a la [especificación vigente](evento10-2026-09-23.md), que reemplaza la regla anterior de corte por hoy y bloques vacíos.
 
-Esta verificación corresponde al evento 10 corregido: deudas de tratamientos activos, con rango obligatorio por vencimiento y exclusión de cuotas futuras. Reemplaza los resultados de la versión anterior de consulta general de pagos.
+## Ejecutado
 
-## Ejecutado y aprobado
+- **Maven clean verify: BUILD SUCCESS. 21 pruebas Java, cero fallos/errores/omitidas.** Se activaron ANALITIQ_TEST_DB y ANALITIQ_TEST_DEUDAS con la configuración externa existente. Se utilizó MySQL real; no H2 ni repositorios simulados.
+- **20 pruebas HTTP aprobadas** contra el WAR desplegado en Tomcat. Se compilaron y ejecutaron las JSP reales.
+- Identificación por DNI y por nombre/apellido, coincidencia única, homónimos, listado completo sin criterio, rechazo de criterios contradictorios/incompletos y búsqueda sin resultados.
+- La lista de diez pacientes exige selección antes de mostrar cuotas. La variante de lista con un único paciente se comprobó en prueba unitaria de BusquedaSesion, sin alterar la base para reducirla.
+- Validación de DNI seleccionado contra resultados de la sesión, conservación de tratamiento/fechas aunque se envíen campos manipulados, sesiones independientes, nueva búsqueda sin selección heredada y dos pestañas con filtros separados.
+- Tratamiento omitido/específico/inexistente, exclusión de tratamientos inactivos, cuotas Pagada y pagos de consultas; filtro exacto y parametrizado. Se comprobó una cadena de inyección como valor literal de tratamiento.
+- Rango obligatorio, fechas válidas, rango invertido, ambos límites incluidos y un solo día. Cuotas posteriores a hoy incluidas: por ejemplo 2308 con vencimiento 01/12/2026.
+- Sin bloques vacíos; mensaje de ausencia de cuotas con identificación y rango, distinto de ausencia de pacientes. Avisos únicamente por tipos activos repetidos, incluso cuando no hay cuotas coincidentes. La corrección posterior elimina cualquier máximo numérico de tratamientos.
+- Cantidades y totales coinciden con las filas HTML; sin duplicados, orden de vencimiento y dos decimales. Suma BigDecimal comprobada también con valores fraccionarios (10,10 + 20,20 = 30,30).
+- Sofía (45000001), rango 01/01/2026–31/12/2027: Ortodoncia tiene cinco filas y total 50.000,00; Implante tiene una y total 20.000,00. El Conducto sin cuotas no se muestra.
+- CSRF, escape HTML, entradas malformadas, acceso directo a JSP privadas y rutas /deudas, /pagos y página inicial.
+- Concurrencia local: 12 búsquedas distribuidas entre 8 trabajadores.
+- Se conserva la prueba de regresión de los componentes antiguos de pagos y el rechazo MySQL de UPDATE sin filas afectadas (error 1142), usando el usuario SELECT.
+- Revisión visual en navegador local del formulario, tarjetas de selección y encabezado/tablas/totales de un informe con dos tratamientos.
+- **Checksums idénticos en las 13 tablas antes y después de las pruebas HTTP y revisión visual.** No se aplicó ningún SQL de escritura ni migración en esta modificación.
+- WAR generado y desplegado idénticos; no contiene contraseña local ni configuración privada/.local/.tools/scripts de base.
 
-- Maven `clean verify`: **BUILD SUCCESS**, **18 pruebas Java**, 0 fallos, 0 errores, 0 omitidas. Se activaron las integraciones con `ANALITIQ_TEST_DB=1` y `ANALITIQ_TEST_DEUDAS=1`, sobre MySQL real y los scripts 01/02/04/05.
-- WAR generado en `target/analitiq.war` y desplegado en Tomcat 9.0.122 con contexto `/analitiq`. El artefacto desplegado es idéntico al generado.
-- `scripts/probar-http.py`: **17 pruebas HTTP aprobadas**, usando formularios, Servlets, JSP compiladas por Tomcat y MySQL real.
-- Búsqueda por DNI y nombre/apellido con cero/una/varias coincidencias; acceso directo cuando hay una; selección de homónimos validada en el servidor. Se conserva el rango incluso ante campos adicionales manipulados.
-- Fechas obligatorias, calendario válido, orden del rango, rango de un solo día y ambos extremos incluidos. Rechazo HTTP 400 en solicitudes inválidas.
-- Pruebas JDBC con reloj controlado: vencimiento del día incluido, día siguiente excluido, fechas futuras excluidas aunque entren en el rango, y cambio de día según Argentina.
-- Exclusión de consultas odontológicas, cuotas Pagada y tratamientos inactivos. Los parámetros antiguos de tipo/estado no cambian el alcance.
-- Sofía: tres tratamientos activos de distinto tipo, cuotas agrupadas por tratamiento y presupuesto, sin duplicados. Los bloques sin deuda permanecen visibles.
-- Diferencia entre paciente sin tratamientos activos y tratamiento activo sin deudas en el rango. Presupuestos y cuotas muestran sus importes completos, sin calcular saldos parciales.
-- Avisos de tipos repetidos y de más de tres activos: permanecen visibles los dos/cuatro registros de los casos deliberadamente inconsistentes.
-- Aplicar un rango nuevo conserva al paciente validado y crea otro flujo; una pestaña anterior mantiene su rango. Un filtro inválido no reemplaza el rango del informe y muestra una explicación.
-- Rechazo de DNI ajeno, flujo inexistente/de otra sesión, CSRF inválido y entradas malformadas; escape HTML. Sesiones independientes y 12 búsquedas repartidas entre 8 trabajadores concurrentes.
-- Ruta principal `/deudas`, compatibilidad de `/pagos` con el alcance nuevo, página inicial y bloqueo de acceso directo a JSP privadas.
-- Se conserva la prueba de regresión del servicio anterior de pagos. El usuario de aplicación sigue siendo de sólo lectura; el intento de UPDATE sin filas afectadas fue rechazado por MySQL con error 1142.
-- Inspección del WAR: no contiene la contraseña local, configuración privada, carpetas .local/.tools ni scripts de base. `pom.properties` contiene sólo metadatos normales de Maven.
-- Revisión visual en navegador local de la búsqueda y del informe de Sofía: rango aplicado y fecha de corte, campos de los tratamientos, tabla de cuotas y bloques sin deudas. Se conservan estilos y codificación de nombres y fechas.
+## Artefactos
 
-SHA-256 del WAR entregado:
+WAR: `target/analitiq.war`, desplegado en `.local/tomcat/webapps/analitiq.war`.
+Respaldo del WAR previo: `.local/analitiq-antes-20260923.war`.
+
+SHA-256:
 
 ```text
-6BA7E93A7672ED0DC1373C613065B454FBC346F61164D404DCC1665A6DB660E9
+7A7ADEDE1EE54ECEC3983B63C61609A405553D2FAB5C044464FEF4D8361B40EB
 ```
 
-Reportes Maven: `target/surefire-reports`. Registros locales de ejecución: `tmp/coloquio-build.log` y `tmp/coloquio-http.log` (ignorados por Git). Antes de agregar los casos ficticios se guardó `.local/antes-coloquio.sql`; las adiciones no sobrescribieron filas previas. El WAR previo se conserva en `.local/analitiq-pre-deudas.war`.
+Registros locales: `tmp/evento10-20260923-build.log`, `tmp/evento10-20260923-http.log`, `tmp/evento10-20260923-checksum-antes.txt`, `tmp/evento10-20260923-checksum-despues.txt`. Reportes JUnit: `target/surefire-reports`.
 
-## Alcance pendiente fuera de este entorno
+## Límites de la verificación
 
-- Abrir y ejecutar desde la interfaz de NetBeans: se verificaron su instalación y su Maven, pero se compiló por terminal y se desplegó directamente en Tomcat. README explica cómo registrar el servidor.
-- Desplegar en hosting real, configurar dominio/HTTPS/JDBC con TLS y verificar migración y restore en otro servidor. No se publicó en internet.
-- Carga a escala y revisión en navegadores/dispositivos adicionales. La concurrencia local no equivale a una certificación de rendimiento.
-- Indisponibilidad durante una consulta y recuperación de infraestructura: el manejo HTTP 503 está implementado, pero no se detuvo el MySQL compartido para simularlo.
-- Contrastar con Lucid, página 7, que no estaba disponible.
-- Actualizar documentos externos del sistema: descripción del evento, DFD, ELP y diccionario. El detalle de los ajustes está en [coloquio del 17/09/2026](coloquio-2026-09-17.md); no se modificaron el PDF original ni Lucid.
+- Se construyó con el Maven instalado de NetBeans y se desplegó en Tomcat; no se ejecutó desde la interfaz gráfica de NetBeans. README mantiene los pasos de configuración y ejecución.
+- No se publicó en internet ni se probó migración a otro servidor. No se cambiaron las versiones del entorno ni las dependencias.
+- No se interrumpió el MySQL compartido para simular un fallo durante esta suite. Los errores de configuración/SQL mantienen su manejo HTTP 503; la ausencia de datos produce mensajes distintos y HTTP 200.
+- La revisión visual fue de escritorio; no equivale a pruebas de todos los dispositivos, navegadores o carga a escala.
+- Las imágenes mencionadas en el pedido no estaban adjuntas. Se siguió la estructura escrita conservando el estilo actual.
+- La moneda de cuotas/presupuestos sigue ausente del modelo. Las sumas son de sus valores registrados, sin símbolo ni conversiones; no se puede certificar contabilidad multimoneda con ese esquema.
+- El TP/PDF, DFD, ELP y DD externos no fueron modificados. Los cambios pendientes están enumerados en la documentación del evento.
 
-La aplicación contiene datos ficticios y no incorpora autenticación del odontólogo. Antes de usar datos reales se requiere definir e implementar ese acceso.
+## Corrección de cantidad de tratamientos
+
+Se recompiló y desplegó el WAR tras retirar el máximo numérico. Volvieron a pasar las 21 pruebas Java y las 20 HTTP. La prueba unitaria acepta cinco activos de tipos distintos; las pruebas MySQL/HTTP de Nora conservan únicamente el aviso por tipo repetido. No se ejecutaron migraciones ni se cambiaron datos. Registros de esta ejecución: tmp/regla-tratamientos-build.log y tmp/regla-tratamientos-http.log.
+
+
+## Rediseño visual posterior
+
+El WAR actual incorpora la paleta blanca/gris/roja y la navegación superior. Compilación correcta, 20 pruebas HTTP aprobadas y revisión visual en escritorio y móvil. No cambió Java ni la base. Detalle en [rediseño visual](rediseno-visual.md). Logs: tmp/rediseno-build.log y tmp/rediseno-http.log.
