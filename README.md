@@ -1,5 +1,7 @@
 # AnalitIQ · Tratamientos e informes
 
+**Datos nuevos para probar (24/09/2026):** se agregaron siete pacientes ficticios a la demo, conservando los anteriores. DNI **46000001–46000007**, con cuotas pendientes entre septiembre y noviembre de 2026. [Nombres, tratamientos y recorridos](docs/siete-pacientes-prueba.md). El script opcional `database/08-siete-pacientes-prueba.sql` ya está aplicado localmente; no reimportarlo. Pronóstico y Objetivos están identificados individualmente como opcionales.
+
 **Nuevo: menú principal y evento 3, Registrar un tratamiento.** Abrir [el menú local](http://127.0.0.1:8080/analitiq/) para elegir el alta o el informe de deudas. El registro guarda en MySQL, valida el paciente y el catálogo, evita activos repetidos del mismo tipo y protege frente a reenvíos y concurrencia. No hay límite numérico de tratamientos. [Guía del evento 3: instalación, archivos y casos de prueba](docs/evento3.md).
 
 Proyecto Java web Maven, JSP/JSTL/EL, Servlets y JDBC. Implementa la especificación del **23/09/2026**, que tiene prioridad sobre el alcance anterior del coloquio y el TP. Conserva arquitectura, dependencias, Tomcat y configuración externa. El [rediseño visual](docs/rediseno-visual.md) usa blanco, gris oscuro y rojo, con navegación superior y adaptación a móvil.

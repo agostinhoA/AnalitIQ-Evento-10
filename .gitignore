@@ -4,3 +4,5 @@
 /.local/
 /nbproject/private/
 *.log
+__pycache__/
+*.py[cod]

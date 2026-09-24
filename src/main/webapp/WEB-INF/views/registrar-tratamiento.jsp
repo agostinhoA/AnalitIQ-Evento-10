@@ -15,8 +15,8 @@
 <div><label for="fin">Finalización estimada <small>(opcional)</small></label><input id="fin" name="fin" type="date" min="1000-01-01" max="9999-12-31" value="<c:out value='${finValor}'/>"></div>
 </div><p class="range-help">Si indicás una finalización estimada, debe ser igual o posterior al inicio.</p></fieldset>
 <fieldset><legend>3. Plan de atención <small>(opcional)</small></legend><div class="registration-fields">
-<div><label for="objetivos">Objetivos</label><textarea id="objetivos" name="objetivos" rows="4" maxlength="65535" aria-describedby="texto-ayuda" placeholder="¿Qué se busca lograr con el tratamiento?"><c:out value="${objetivosValor}"/></textarea></div>
-<div><label for="pronostico">Pronóstico</label><textarea id="pronostico" name="pronostico" rows="4" maxlength="65535" aria-describedby="texto-ayuda" placeholder="Describí la evolución esperada"><c:out value="${pronosticoValor}"/></textarea></div>
+<div><label for="objetivos">Objetivos <small>(opcional)</small></label><textarea id="objetivos" name="objetivos" rows="4" maxlength="65535" aria-describedby="texto-ayuda" placeholder="¿Qué se busca lograr con el tratamiento?"><c:out value="${objetivosValor}"/></textarea></div>
+<div><label for="pronostico">Pronóstico <small>(opcional)</small></label><textarea id="pronostico" name="pronostico" rows="4" maxlength="65535" aria-describedby="texto-ayuda" placeholder="Describí la evolución esperada"><c:out value="${pronosticoValor}"/></textarea></div>
 </div><small id="texto-ayuda">Podés dejar ambos campos vacíos y completar sólo los datos obligatorios.</small></fieldset>
 <div class="form-footer"><a href="<c:url value='/inicio'/>">Volver al menú</a><button type="submit">Registrar tratamiento</button></div>
 </form></section>
