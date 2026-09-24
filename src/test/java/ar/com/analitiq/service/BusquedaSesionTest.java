@@ -13,18 +13,23 @@ class BusquedaSesionTest {
     @Test void rechazaDniAjenoYConservaFiltros() {
         BusquedaSesion s=new BusquedaSesion(); String id=s.agregar(homonimos,filtros,criterio,ahora);
         assertThrows(IllegalArgumentException.class,()->s.seleccionar(id,"32444555",ahora));
-        s.seleccionar(id,"30111222",ahora);
-        assertSame(filtros,s.obtener(id,ahora).getFiltros());
-        assertEquals("30111222",s.obtener(id,ahora).getDni());
-        assertThrows(IllegalArgumentException.class,()->s.seleccionar(id,"30999888",ahora));
+        String elegido=s.seleccionar(id,"30111222",ahora);
+        assertSame(filtros,s.obtener(elegido,ahora).getFiltros());
+        assertNull(s.obtener(id,ahora).getDni());
+        assertEquals("30111222",s.obtener(elegido,ahora).getDni());
+        String cambiado=s.seleccionar(elegido,"30999888",ahora);
+        assertEquals("30999888",s.obtener(cambiado,ahora).getDni());
+        assertEquals("30111222",s.obtener(elegido,ahora).getDni());
     }
     @Test void aisladasPorSesionYPestana() {
         BusquedaSesion a=new BusquedaSesion(), b=new BusquedaSesion();
         String uno=a.agregar(homonimos,filtros,criterio,ahora);
         String dos=a.agregar(homonimos,filtros,criterio,ahora);
         assertThrows(IllegalArgumentException.class,()->b.obtener(uno,ahora));
-        a.seleccionar(uno,"30111222",ahora);
+        String elegido=a.seleccionar(uno,"30111222",ahora);
         assertNull(a.obtener(dos,ahora).getDni());
+        assertNull(a.obtener(uno,ahora).getDni());
+        assertEquals("30111222",a.obtener(elegido,ahora).getDni());
     }
     @Test void seleccionUnicaConCriterioYVencimiento() {
         BusquedaSesion s=new BusquedaSesion(); String id=s.agregar(List.of(homonimos.get(0)),filtros,criterio,ahora);
@@ -36,9 +41,9 @@ class BusquedaSesionTest {
         String id=s.agregar(List.of(homonimos.get(0)),filtros,CriterioBusqueda.validarEntrada("","", ""),ahora);
         assertTrue(s.obtener(id,ahora).isListado());
         assertNull(s.obtener(id,ahora).getDni());
-        assertThrows(IllegalArgumentException.class,()->s.filtrar(id,filtros,ahora));
-        s.seleccionar(id,"30111222",ahora);
-        assertEquals("30111222",s.obtener(id,ahora).getDni());
+        assertThrows(IllegalArgumentException.class,()->s.filtrar(id,homonimos,filtros,ahora));
+        String elegido=s.seleccionar(id,"30111222",ahora);
+        assertEquals("30111222",s.obtener(elegido,ahora).getDni());
     }
     @Test void limitaFlujosNoPacientes() {
         BusquedaSesion s=new BusquedaSesion(); String id=s.agregar(homonimos,filtros,criterio,ahora);
@@ -60,13 +65,14 @@ class BusquedaSesionTest {
     }
     @Test void filtrarConservaPacienteYNoAlteraOtraPestana() {
         BusquedaSesion s=new BusquedaSesion(); String id=s.agregar(homonimos,filtros,criterio,ahora);
-        s.seleccionar(id,"30111222",ahora);
+        id=s.seleccionar(id,"30111222",ahora);
         var otro=new FiltrosDeuda(RangoFechas.parse("2026-08-01","2026-08-31"),"Implante");
-        String nuevo=s.filtrar(id,otro,ahora);
+        String nuevo=s.filtrar(id,List.of(homonimos.get(1)),otro,ahora);
         assertNotEquals(id,nuevo);
         assertSame(filtros,s.obtener(id,ahora).getFiltros());
         assertSame(otro,s.obtener(nuevo,ahora).getFiltros());
         assertEquals("30111222",s.obtener(nuevo,ahora).getDni());
-        assertThrows(IllegalArgumentException.class,()->s.filtrar("ajeno",otro,ahora));
+        assertEquals(List.of(homonimos.get(1)),s.obtener(nuevo,ahora).getPacientes());
+        assertThrows(IllegalArgumentException.class,()->s.filtrar("ajeno",homonimos,otro,ahora));
     }
 }

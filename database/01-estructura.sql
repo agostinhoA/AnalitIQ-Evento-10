@@ -1,4 +1,4 @@
--- MySQL >= 8.4. Ejecutar SIN --force. Falla si la base ya existe; nunca la reemplaza.
+-- Verificado con MySQL 8.0.41. Ejecutar SIN --force. Falla si la base ya existe; nunca la reemplaza.
 CREATE DATABASE analitiq_demo CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_as_cs;
 USE analitiq_demo;
 CREATE TABLE pacientes (

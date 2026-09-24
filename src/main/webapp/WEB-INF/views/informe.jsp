@@ -1,5 +1,6 @@
 <%@ include file="header.jspf" %>
-<div class="title-row"><div><h1>Ver informe de deudas de un paciente</h1><p class="lead">Cuotas pendientes de tratamientos activos para los criterios seleccionados.</p></div><a class="button secondary" href="<c:url value='/deudas'/>">Cambiar paciente</a></div>
+<c:url var="cambiarPacienteUrl" value="/deudas"><c:param name="busqueda" value="${busquedaId}"/><c:param name="vista" value="seleccionar"/></c:url>
+<div class="title-row"><div><h1>Ver informe de deudas de un paciente</h1><p class="lead">Cuotas pendientes de tratamientos activos para los criterios seleccionados.</p></div><a class="button secondary" href="<c:out value='${cambiarPacienteUrl}'/>">Cambiar paciente</a></div>
 <section class="patient-card report-header"><div class="avatar" aria-hidden="true">P</div><div><h2><c:out value="${informe.paciente.nombre}"/> <c:out value="${informe.paciente.apellido}"/></h2><p>DNI <strong><c:out value="${informe.paciente.dni}"/></strong></p></div>
 <dl class="report-range"><div><dt>Fecha desde</dt><dd><fmt:formatDate value="${informe.rango.desdeFecha}" pattern="dd/MM/yyyy"/></dd></div><div><dt>Fecha hasta</dt><dd><fmt:formatDate value="${informe.rango.hastaFecha}" pattern="dd/MM/yyyy"/></dd></div></dl>
 </section>

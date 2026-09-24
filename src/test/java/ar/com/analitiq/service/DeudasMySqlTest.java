@@ -68,4 +68,20 @@ class DeudasMySqlTest {
         assertEquals(2,s.buscar(CriterioBusqueda.validarEntrada("","Juan","Pérez")).size());
         assertTrue(s.buscar(CriterioBusqueda.validarEntrada("99999999","","")).isEmpty());
     }
+    @Test void pacientesConCuotasPendientesRespetanRangoYTratamiento() throws Exception {
+        var todos=CriterioBusqueda.validarEntrada("","","");
+        var septiembre=filtro("2026-09-01","2026-09-30","");
+        assertEquals(List.of("45000001","30111222"),s.buscar(todos,septiembre).stream().map(Paciente::getDni).toList());
+        assertTrue(s.buscar(CriterioBusqueda.validarEntrada("45000004","",""),septiembre).isEmpty());
+        assertTrue(s.buscar(CriterioBusqueda.validarEntrada("","Lucía","Gómez"),septiembre).isEmpty());
+        assertEquals(List.of("30111222"),s.buscar(CriterioBusqueda.validarEntrada("","Juan","Pérez"),septiembre)
+            .stream().map(Paciente::getDni).toList());
+        assertEquals(List.of("45000001"),s.buscar(todos,filtro("2026-12-01","2026-12-01","Implante"))
+            .stream().map(Paciente::getDni).toList());
+    }
+    @Test void filtroUsaCatalogoDeTratamientos() throws Exception {
+        assertEquals(List.of("Conducto","Implante","Ortodoncia"),s.catalogo().stream().map(TipoTratamiento::getNombre).toList());
+        assertEquals("Ortodoncia",s.validarFiltro(filtro("2026-09-01","2026-09-30"," oRtOdOnCiA ")).getTratamiento());
+        assertThrows(IllegalArgumentException.class,()->s.validarFiltro(filtro("2026-09-01","2026-09-30","No existe")));
+    }
 }

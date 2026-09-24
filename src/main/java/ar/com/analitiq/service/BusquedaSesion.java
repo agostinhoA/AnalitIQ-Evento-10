@@ -32,19 +32,17 @@ public final class BusquedaSesion implements Serializable {
         }
         return f;
     }
-    public synchronized void seleccionar(String id, String dni, Instant ahora) {
+    public synchronized String seleccionar(String id, String dni, Instant ahora) {
         Flujo f=obtener(id,ahora);
         if(dni==null || f.pacientes.stream().noneMatch(p -> p.getDni().equals(dni)))
             throw new IllegalArgumentException("Seleccioná un paciente de los resultados de esta búsqueda.");
-        if(f.dni!=null && !f.dni.equals(dni))
-            throw new IllegalArgumentException("Esta búsqueda ya tiene un paciente seleccionado. Iniciá otra búsqueda.");
-        flujos.put(id,new Flujo(f.pacientes,f.filtros,f.criterio,f.creado,dni));
+        return agregarFlujo(f.pacientes,f.filtros,f.criterio,ahora,dni);
     }
     /** Otro identificador evita modificar informes abiertos en otras pestañas. */
-    public synchronized String filtrar(String id, FiltrosDeuda filtros, Instant ahora) {
+    public synchronized String filtrar(String id, List<Paciente> pacientes, FiltrosDeuda filtros, Instant ahora) {
         Flujo f=obtener(id,ahora);
         if(f.dni==null) throw new IllegalArgumentException("Seleccioná primero un paciente de los resultados.");
-        return agregarFlujo(f.pacientes,filtros,f.criterio,ahora,f.dni);
+        return agregarFlujo(pacientes,filtros,f.criterio,ahora,f.dni);
     }
     public static final class Flujo implements Serializable {
         private static final long serialVersionUID=3L;

@@ -30,8 +30,12 @@ public final class DeudasServlet extends HttpServlet {
         try {
             BusquedaSesion.Flujo flujo=busquedas.obtener(id,Instant.now());
             contexto(req,id,flujo);
+            if("seleccionar".equals(req.getParameter("vista"))) {
+                if(flujo.getPacientes().isEmpty()) req.setAttribute("mensaje","No se encontraron pacientes con cuotas pendientes para los filtros seleccionados.");
+                vista(req,res,"seleccionar"); return;
+            }
             if(flujo.getPacientes().isEmpty()) {
-                req.setAttribute("mensaje","No se encontraron pacientes");
+                req.setAttribute("mensaje","No se encontraron pacientes con cuotas pendientes para los filtros seleccionados.");
                 vista(req,res,"buscar");
             } else if(flujo.getDni()==null) vista(req,res,"seleccionar");
             else mostrarInforme(req,res,flujo);
@@ -48,17 +52,21 @@ public final class DeudasServlet extends HttpServlet {
         try {
             String id;
             if("buscar".equals(action)) {
-                FiltrosDeuda filtros=filtrosEnviados(req);
                 CriterioBusqueda criterio=CriterioBusqueda.validarEntrada(req.getParameter("dni"),req.getParameter("nombre"),req.getParameter("apellido"));
                 DeudasService service=obtenerServicio(req,res);
                 if(service==null) return;
-                id=busquedas.agregar(service.buscar(criterio),filtros,criterio,Instant.now());
+                FiltrosDeuda filtros=service.validarFiltro(filtrosEnviados(req));
+                id=busquedas.agregar(service.buscar(criterio,filtros),filtros,criterio,Instant.now());
             } else if("seleccionar".equals(action)) {
-                id=req.getParameter("busqueda");
                 // El rango se toma del servidor, no de campos alterables del formulario.
-                busquedas.seleccionar(id,req.getParameter("dni"),Instant.now());
+                id=busquedas.seleccionar(req.getParameter("busqueda"),req.getParameter("dni"),Instant.now());
             } else if("filtrar".equals(action)) {
-                id=busquedas.filtrar(req.getParameter("busqueda"),filtrosEnviados(req),Instant.now());
+                String anterior=req.getParameter("busqueda");
+                BusquedaSesion.Flujo flujo=busquedas.obtener(anterior,Instant.now());
+                DeudasService service=obtenerServicio(req,res);
+                if(service==null) return;
+                FiltrosDeuda filtros=service.validarFiltro(filtrosEnviados(req));
+                id=busquedas.filtrar(anterior,service.buscar(flujo.getCriterio(),filtros),filtros,Instant.now());
             } else throw new IllegalArgumentException("Solicitud no válida. Iniciá una nueva búsqueda.");
             res.setStatus(303);
             res.setHeader("Location",req.getContextPath()+"/deudas?busqueda="+id);
@@ -120,6 +128,13 @@ public final class DeudasServlet extends HttpServlet {
         res.setStatus(status); req.setAttribute("mensaje",mensaje); vista(req,res,"error");
     }
     private void vista(HttpServletRequest req,HttpServletResponse res,String nombre) throws ServletException,IOException {
+        if("buscar".equals(nombre) || "informe".equals(nombre)) {
+            DeudasService service=(DeudasService)getServletContext().getAttribute("deudasService");
+            if(service!=null) {
+                try { req.setAttribute("tipos",service.catalogo()); }
+                catch(SQLException e) { dbError(req,res,e); return; }
+            }
+        }
         req.getRequestDispatcher("/WEB-INF/views/"+nombre+".jsp").forward(req,res);
     }
 }

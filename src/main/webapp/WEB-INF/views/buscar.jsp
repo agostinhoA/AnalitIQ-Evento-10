@@ -6,7 +6,7 @@
 <form method="post" action="<c:url value='/deudas'/>">
 <input type="hidden" name="accion" value="buscar"><input type="hidden" name="csrf" value="<c:out value='${sessionScope.csrf}'/>">
 <fieldset><legend>1. Identificar al paciente</legend>
-<p class="muted" id="criterio-ayuda">Completá el DNI <strong>o</strong> el nombre y apellido juntos. Dejá los tres campos vacíos para elegir de la lista de pacientes.</p>
+<p class="muted" id="criterio-ayuda">Completá el DNI <strong>o</strong> el nombre y apellido juntos. Dejá los tres campos vacíos para elegir entre los pacientes con cuotas pendientes en el rango.</p>
 <div class="identification-fields">
 <div><label for="dni">DNI</label><input id="dni" name="dni" type="text" inputmode="numeric" maxlength="8" placeholder="Ej. 30111222" value="<c:out value='${dniValor}'/>" aria-describedby="criterio-ayuda"><small>7 u 8 dígitos, sin puntos.</small></div>
 <div class="two-columns"><div><label for="nombre">Nombre</label><input id="nombre" name="nombre" maxlength="100" placeholder="Ej. Juan" value="<c:out value='${nombreValor}'/>"></div><div><label for="apellido">Apellido</label><input id="apellido" name="apellido" maxlength="100" placeholder="Ej. Pérez" value="<c:out value='${apellidoValor}'/>"></div></div>
@@ -16,5 +16,5 @@
 <%@ include file="rango.jspf" %>
 </fieldset>
 <div class="form-footer"><span>Consulta de información, sin modificar registros.</span><button type="submit">Consultar →</button></div></form></section>
-<aside class="help-card"><span class="help-icon" aria-hidden="true">i</span><h2>Un informe por paciente.</h2><p>Si la búsqueda identifica un único paciente, verás directamente su informe. Si hay homónimos o no ingresás un criterio, podrás elegirlo por su DNI.</p><hr><h3>Deudas por tratamiento</h3><p>Se incluyen cuotas en estado Adeuda con vencimiento dentro del rango, aunque todavía no hayan vencido. Cada cuota se adeuda por su importe completo.</p><p class="small">El tratamiento y las fechas se conservan durante la selección.</p></aside></div>
+<aside class="help-card"><span class="help-icon" aria-hidden="true">i</span><h2>Un informe por paciente.</h2><p>La búsqueda muestra sólo pacientes con cuotas pendientes según el tratamiento y el rango elegidos. Si no ingresás un criterio, podrás elegirlos por su DNI.</p><hr><h3>Deudas por tratamiento</h3><p>Se incluyen cuotas en estado Adeuda con vencimiento dentro del rango, aunque todavía no hayan vencido. Cada cuota se adeuda por su importe completo.</p><p class="small">El tratamiento y las fechas se conservan durante la selección.</p></aside></div>
 <%@ include file="footer.jspf" %>

@@ -1,4 +1,4 @@
--- MySQL 8.4+. Migración aditiva, ejecutar UNA VEZ como administrador, SIN --force.
+-- Verificado con MySQL 8.0.41. Migración aditiva, ejecutar UNA VEZ como administrador, SIN --force.
 -- Respaldar antes. Si hay activos duplicados, el ALTER falla sin eliminar datos.
 USE analitiq_demo;
 -- Ejecutar en una conexión administrativa exclusiva, sin otras escrituras.

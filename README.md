@@ -6,7 +6,7 @@ Proyecto Java web Maven, JSP/JSTL/EL, Servlets y JDBC. Implementa la especificac
 
 Se muestran únicamente cuotas en estado **Adeuda**, de tratamientos con **activo = SI**, cuya fecha de vencimiento esté dentro de **Desde/Hasta, ambos incluidos**. Ambas fechas son obligatorias. **No hay corte por hoy**: una cuota futura se incluye si está dentro del rango y sigue en Adeuda.
 
-El formulario admite DNI, nombre y apellido juntos, o identificación vacía para elegir de la lista completa. DNI y nombre/apellido simultáneos se rechazan. La lista completa exige selección incluso si contiene un único paciente; una búsqueda con criterio y una sola coincidencia genera el informe directamente. El nombre de tratamiento es opcional: se compara el nombre completo del catálogo sin distinguir mayúsculas y minúsculas.
+El formulario admite DNI, nombre y apellido juntos, o identificación vacía para elegir entre todos los pacientes que tengan cuotas pendientes dentro del rango. DNI y nombre/apellido simultáneos se rechazan. La lista filtrada exige selección incluso si contiene un único paciente; una búsqueda con criterio y una sola coincidencia genera el informe directamente. El tratamiento es opcional y se elige del mismo catálogo que usa Registrar tratamiento.
 
 El informe identifica una vez al paciente y al rango; muestra un bloque por tratamiento con cuotas coincidentes y las columnas Cuota, Fecha de vencimiento y Saldo pendiente. Cada bloque incluye cantidad y suma exacta de sus filas con BigDecimal. No hay bloques vacíos, importes parciales ni operaciones de pago. Los estados se consultan por su relación y nombre, sin fijar IDs numéricos.
 
@@ -14,26 +14,26 @@ Rutas: `/inicio` (también `/`) abre el menú; `/tratamientos/registrar` abre el
 
 ## Inicio en esta computadora
 
-La demo `analitiq_demo` ya está preparada, incluida la migración 06 del evento 3. Tiene una cuenta `analitiq_lectura` con permiso **SELECT**, otra `analitiq_registro` con SELECT e INSERT limitado a tratamientos y configuración privada en `.local/analitiq.properties`. Las bases anteriores se conservaron. **No vuelvas a importar los scripts ni la migración sobre esta base.**
+La demo `analitiq_demo` ya está preparada, incluida la migración 06 del evento 3. Tiene una cuenta `analitiq_lectura` con permiso **SELECT**, otra `analitiq_registro` con SELECT e INSERT limitado a tratamientos y configuración privada en `.local/analitiq.properties`. **No vuelvas a importar los scripts ni la migración sobre esta base.**
 
-El servidor portable de pruebas está en `.tools/apache-tomcat-9.0.122`. No se modificó el Tomcat de XAMPP. Desde la raíz del proyecto, en PowerShell 7:
+El servidor portable de pruebas está en `.tools/apache-tomcat-9.0.122`. La instancia local está configurada en `.local/tomcat`, con Java 17 y puerto `127.0.0.1:8080`. No se modificó el Tomcat de XAMPP ni el Tomcat instalado como servicio. Desde la raíz del proyecto, en PowerShell:
 
 ```powershell
-./scripts/ejecutar-tomcat.ps1 -TomcatHome .tools/apache-tomcat-9.0.122
+./scripts/iniciar-local.ps1
 ```
 
-Abrir [AnalitIQ local](http://127.0.0.1:8080/analitiq/). El servidor debe estar ejecutándose y MySQL de WAMP encendido. Ctrl+C detiene el servidor. El script usa una instancia propia en `.local/tomcat` y escucha sólo en la interfaz local. No ejecutes simultáneamente este script y NetBeans sobre el mismo puerto/instancia.
+Abrir [AnalitIQ local](http://127.0.0.1:8080/analitiq/). El servidor debe estar ejecutándose y el servicio `MySQL80` encendido. Ctrl+C detiene el servidor. El servicio Windows `Tomcat9` debe permanecer detenido mientras esta instancia use 8080. `./scripts/iniciar-local.ps1 -Compilar` recompila antes de iniciar. No ejecutes simultáneamente este script y NetBeans sobre el mismo puerto/instancia.
 
 ## Entorno comprobado y compatibilidad
 
 | Componente | Detectado / elegido |
 |---|---|
 | Java | Oracle JDK 17.0.12 instalado; compilación para Java 17 |
-| NetBeans | 19 instalado |
-| Maven | 3.9.3 incluido en NetBeans; no estaba en PATH |
-| MySQL | WAMP MySQL 8.4.7 activo, TCP 3306, verificado con `SELECT VERSION()` |
-| Otros motores | MariaDB 11.4.9 de WAMP; MySQL 9.5 instalado pero detenido. No se utilizaron |
-| Servidor existente | XAMPP Tomcat 8.5.96. No se usa para este proyecto |
+| NetBeans | Apache NetBeans instalado |
+| Maven | 3.9.11 incluido en NetBeans; no está en PATH |
+| MySQL | MySQL 8.0.41, servicio `MySQL80`, TCP 3306; pruebas de integración verificadas |
+| Otros motores | MariaDB de XAMPP; no se utilizó |
+| Servidor existente | Servicio Windows `Tomcat9` y XAMPP Tomcat 8.5.96; no se usan para esta instancia |
 | Servidor del proyecto | Tomcat 9.0.122 portable, descarga oficial con SHA-512 verificado |
 | APIs | Servlet 4.0, JSP 2.3, `javax.servlet`, JSTL 1.2 |
 | JDBC | MySQL Connector/J 9.7.0, compatible con MySQL 8.0+ y Java 8+ |
@@ -61,7 +61,7 @@ Si no está en PATH, definir `$maven` con la ubicación de `mvn.cmd` del Maven i
 
 ## Preparar MySQL en otra instalación
 
-Arrancar **MySQL** desde WAMP (no confundirlo con MariaDB). Confirmar versión y puerto con el cliente o Workbench. La estructura está preparada para MySQL 8.4 o posterior.
+Arrancar **MySQL** (en esta computadora, el servicio `MySQL80`; no usar MariaDB de XAMPP). Confirmar versión y puerto con el cliente o Workbench. Esta instalación y sus pruebas se verificaron con MySQL 8.0.41.
 
 Los archivos están separados:
 
@@ -76,6 +76,8 @@ Los archivos están separados:
 El preparador automatizado crea la demo original (01/02); luego importar 04 y, si se desean esos casos, 05. Para habilitar el evento 3, aplicar 06 y crear la cuenta de 07 siguiendo [su guía](docs/evento3.md). El usuario de lectura conserva sus permisos.
 
 ### Opción automatizada en Windows
+
+Para una **demo nueva y vacía**, `./scripts/configurar-local.ps1` solicita la clave de administrador de MySQL, importa 01/02/04/05/06, crea las dos cuentas de la aplicación y guarda su configuración privada. Se detiene sin modificar datos si `analitiq_demo` o las cuentas ya existen. No ejecutarlo sobre la demo preparada de esta computadora.
 
 En PowerShell 7, especificar la ruta real de `mysql.exe` (no de `mysqld.exe`):
 
@@ -142,29 +144,29 @@ Un paciente puede tener cualquier cantidad de tratamientos registrados, incluido
 
 **En esta computadora no hay que ejecutar SQL ni reimportar datos.** Por pedido del usuario se borraron y regeneraron los registros de `analitiq_demo` usando 02/04/05, con respaldo previo y sin cambiar el esquema. Hay 10 pacientes, 15 tratamientos y 14 cuotas; no hay activos duplicados por paciente y tipo. Ver [recarga de la demo](docs/recarga-datos-demo.md). En una instalación nueva, seguir la preparación anterior; 05 es opcional salvo para ejecutar todas las pruebas de integración.
 
-Búsqueda de nombres/apellidos exacta, incluyendo mayúsculas y tildes. El tratamiento requiere el nombre completo, pero acepta mayúsculas y minúsculas: `ortodoncia`, `Ortodoncia` y `ORTODONCIA` devuelven lo mismo. Valores existentes del catálogo: `Ortodoncia`, `Implante`, `Conducto`. Un tratamiento inexistente devuelve un informe sin cuotas, no una lista de pacientes.
+Búsqueda de nombres/apellidos exacta, incluyendo mayúsculas y tildes. El selector muestra los valores del catálogo, actualmente `Ortodoncia`, `Implante` y `Conducto`. Sólo se muestran pacientes con cuotas en estado Adeuda de tratamientos activos, dentro del rango y del tratamiento elegido. Un valor ajeno al catálogo se rechaza.
 
 Salvo indicación distinta, usar **Desde 01/01/2026, Hasta 31/12/2027**, tratamiento vacío:
 
 | Entrada | Resultado esperado |
 |---|---|
 | DNI `30111222` | Juan Pérez, Ortodoncia: cuota 3 (603), cantidad 1, total 30.000,00; cuotas pagadas y consultas excluidas |
-| Nombre `Lucía`, apellido `Gómez` | Coincidencia única; informe directo con identificación/rango y mensaje sin cuotas |
-| Nombre `Juan`, apellido `Pérez` | Dos coincidencias, DNI 30111222 y 30999888; se exige seleccionar |
-| DNI, nombre y apellido vacíos | Lista de diez pacientes, cada uno con su DNI y botón Seleccionar; aún no se genera informe |
+| Nombre `Lucía`, apellido `Gómez` | Si no tiene cuotas pendientes en el rango, no aparece en los resultados |
+| Nombre `Juan`, apellido `Pérez` | Sólo aparecen los homónimos con cuotas pendientes en el rango |
+| DNI, nombre y apellido vacíos | Lista de pacientes con cuotas pendientes en el rango, cada uno con su DNI y botón Seleccionar; aún no se genera informe |
 | DNI `45000001` | Sofía Molina: Ortodoncia con 5 cuotas, total 50.000,00; Implante con 1 cuota, total 20.000,00. No aparece el Conducto sin cuotas |
 | DNI `45000001`, tratamiento `Implante` | Sólo Implante, cuota 2 (2308), vence 01/12/2026, total 20.000,00; aparece aunque esa fecha sea posterior a hoy |
-| DNI `45000001`, tratamiento `Conducto` o `No existe` | Identificación, rango y “No se encontraron cuotas pendientes para los criterios seleccionados”; ningún bloque |
+| DNI `45000001`, tratamiento `Conducto` | No aparece en los resultados si no tiene cuotas pendientes de Conducto |
 | DNI `45000001`, Desde 01/09/2026, Hasta 15/09/2026 | Ortodoncia, cuotas 2 y 3 (2302/2303), cantidad 2, total 20.000,00; ambas fechas límite incluidas |
 | DNI `45000001`, Desde/Hasta 15/09/2026 | Sólo cuota 3 (2303), cantidad 1, total 10.000,00 |
-| DNI `45000002`, `37888999`, `40123456` o `30999888` | Informe sin cuotas; tratamientos inactivos/sin cuotas no crean bloques vacíos |
-| DNI `45000003` o `45000004` | Eva/Nora: tratamientos activos e históricos válidos, sin cuotas ni avisos de inconsistencia; no existe límite numérico de tratamientos |
+| DNI `45000002`, `37888999`, `40123456` o `30999888` | No aparecen si no tienen cuotas pendientes dentro del rango |
+| DNI `45000003` o `45000004` | Eva/Nora no aparecen si no tienen cuotas pendientes dentro del rango |
 | DNI `99999999` o `Nadie` / `Inexistente` | “No se encontraron pacientes”; permite corregir los campos y no muestra el informe anterior |
 | DNI junto con nombre/apellido; sólo nombre; sólo apellido | HTTP 400 y explicación; no se interpreta como lista completa |
 | Fechas vacías, inválidas o Desde posterior a Hasta | HTTP 400; no se ejecuta una consulta con rango inválido |
-| Selección de homónimos alterada para enviar DNI `45000001` | HTTP 400; sólo se permiten los pacientes recuperados por esa búsqueda |
+| Selección alterada para enviar el DNI de un paciente fuera de la lista filtrada | HTTP 400; sólo se permiten los pacientes recuperados por esa búsqueda |
 
-Tratamiento y fechas se guardan en el servidor durante la selección. Cambiar los campos ocultos o enviar otros filtros en esa solicitud no los reemplaza. “Modificar filtros” → “Aplicar filtro” conserva el paciente y crea otro flujo, sin alterar informes abiertos en otras pestañas. Un filtro inválido muestra un error y conserva el informe anterior, identificado con sus criterios. “Cambiar paciente” o “Iniciar otra búsqueda” abre un formulario nuevo y no reutiliza la selección previa. Cada flujo vence a los 15 minutos; la sesión a los 20 de inactividad.
+Tratamiento y fechas se guardan en el servidor durante la selección. Cambiar los campos ocultos o enviar otros filtros en esa solicitud no los reemplaza. “Modificar filtros” → “Aplicar filtro” conserva el paciente y crea otro flujo, sin alterar informes abiertos en otras pestañas. Un filtro inválido muestra un error y conserva el informe anterior, identificado con sus criterios. “Cambiar paciente” regresa a la lista de pacientes ya filtrados; “Iniciar otra búsqueda” abre un formulario nuevo. Cada flujo vence a los 15 minutos; la sesión a los 20 de inactividad.
 
 **Moneda:** ni cuotas ni presupuestos tienen un campo de moneda; sólo los pagos lo tienen. Los totales son sumas de importes registrados por tratamiento, sin símbolo monetario ni conversiones. No se infiere la moneda de pagos excluidos del informe ni se suman pagos en distintas monedas. El modelo no permite certificar una totalización multimoneda: antes de incorporar esa posibilidad se necesita definir moneda de presupuesto/cuota y una migración explícita.
 
@@ -187,9 +189,11 @@ Con Tomcat iniciado y Python 3:
 python scripts/probar-http.py http://127.0.0.1:8080/analitiq
 ```
 
-La suite prueba formularios/JSP/Servlet/MySQL reales, validación, lista completa, homónimos, conservación de filtros, ausencia de datos anteriores, tratamiento opcional, exclusiones, fechas, totales/cantidades, sesiones, CSRF, escape HTML y concurrencia. Los resultados son independientes del día actual; los datos ficticios tienen fechas de 2026.
+La suite prueba formularios/JSP/Servlet/MySQL reales, validación, lista filtrada por cuotas pendientes, homónimos, conservación de filtros, selector de tratamiento, exclusiones, fechas, totales/cantidades, sesiones, CSRF, escape HTML y concurrencia. Los resultados son independientes del día actual; los datos ficticios tienen fechas de 2026.
 
 Resultados con el evento 3: **33 pruebas Java, 10 HTTP de registro y 21 HTTP de regresión del evento 10 aprobadas**. Las escrituras se prueban exclusivamente en `analitiq_evento3_test`, usando una instancia de Tomcat en 8081. [Preparación y comandos](docs/evento3.md). Reportes en `target/surefire-reports` y detalles en [verificación](docs/verificacion.md).
+
+En la instalación local actual se ejecutaron **28 pruebas Java sin fallos** (7 de escritura omitidas por requerir `analitiq_evento3_test`) y **23 pruebas HTTP del evento 10 aprobadas** contra `http://127.0.0.1:8080/analitiq/`.
 
 ## Estructura y mantenimiento
 
