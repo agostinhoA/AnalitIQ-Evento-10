@@ -1,4 +1,5 @@
-param([Parameter(Mandatory=$true)][string]$TomcatHome,[int]$Port = 8080)
+param([Parameter(Mandatory=$true)][string]$TomcatHome,[int]$Port = 8080,
+    [string]$BaseDirectory, [string]$ConfigFile)
 $ErrorActionPreference='Stop'
 $project=Split-Path $PSScriptRoot -Parent
 $TomcatHome=(Resolve-Path $TomcatHome).Path
@@ -8,9 +9,10 @@ if (!$env:JAVA_HOME -and !$env:JRE_HOME) {
     if (!$javaHomeLine) { throw 'Definir JAVA_HOME apuntando al JDK 17.' }
     $env:JAVA_HOME = $javaHomeLine.ToString().Split('=',2)[1].Trim()
 }
-$base=Join-Path $project '.local/tomcat'
+$base=if($BaseDirectory) { [IO.Path]::GetFullPath($BaseDirectory) } else { Join-Path $project '.local/tomcat' }
+$configPath=if($ConfigFile) { [IO.Path]::GetFullPath($ConfigFile) } else { Join-Path $project '.local/analitiq.properties' }
 if (!(Test-Path (Join-Path $project 'target/analitiq.war'))) { throw 'Primero ejecutar mvn clean verify.' }
-if (!(Test-Path (Join-Path $project '.local/analitiq.properties'))) { throw 'Falta .local/analitiq.properties. Ver README.' }
+if (!(Test-Path -LiteralPath $configPath)) { throw 'Falta el archivo de configuración externa. Ver README.' }
 if (!(Test-Path (Join-Path $base 'conf/server.xml'))) {
     New-Item -ItemType Directory -Force $base | Out-Null
     Copy-Item -LiteralPath (Join-Path $TomcatHome 'conf') -Destination $base -Recurse
@@ -25,6 +27,6 @@ if (!(Test-Path (Join-Path $base 'conf/server.xml'))) {
 Copy-Item -LiteralPath (Join-Path $project 'target/analitiq.war') -Destination (Join-Path $base 'webapps/analitiq.war') -Force
 $env:CATALINA_HOME=$TomcatHome
 $env:CATALINA_BASE=$base
-$env:ANALITIQ_CONFIG=Join-Path $project '.local/analitiq.properties'
+$env:ANALITIQ_CONFIG=$configPath
 Write-Output "Aplicación local: http://127.0.0.1:$Port/analitiq/ (Ctrl+C para detener)."
 & (Join-Path $TomcatHome 'bin/catalina.bat') run

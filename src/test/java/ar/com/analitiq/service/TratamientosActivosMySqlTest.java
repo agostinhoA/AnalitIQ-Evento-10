@@ -17,12 +17,13 @@ class TratamientosActivosMySqlTest {
             assertEquals(3,tres.stream().map(t -> t.getCodigoTipo()).distinct().count());
             assertTrue(tres.stream().noneMatch(t -> t.getCodigo()==2104));
             assertTrue(dao.activos(c,"45000002").isEmpty());
-            var repetidos=dao.activos(c,"45000003");
-            assertEquals(2,repetidos.size());
-            assertEquals(1,ReglasTratamientos.inconsistencias(repetidos).size());
-            var cuatro=dao.activos(c,"45000004");
-            assertEquals(4,cuatro.size());
-            assertEquals(1,ReglasTratamientos.inconsistencias(cuatro).size());
+            var eva=dao.activos(c,"45000003");
+            assertEquals(1,eva.size());
+            assertTrue(ReglasTratamientos.inconsistencias(eva).isEmpty());
+            var nora=dao.activos(c,"45000004");
+            assertEquals(3,nora.size());
+            assertTrue(nora.stream().noneMatch(t -> t.getCodigo()==2506));
+            assertTrue(ReglasTratamientos.inconsistencias(nora).isEmpty());
             assertTrue(dao.activos(c,"' OR 1=1 --").isEmpty());
         }
     }

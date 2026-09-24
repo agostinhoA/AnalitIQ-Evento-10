@@ -5,14 +5,18 @@
 <fmt:setLocale value="es_AR" scope="request"/>
 <!doctype html>
 <html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Ver informe de deudas de un paciente · AnalitIQ</title>
+<title><c:out value="${empty tituloPagina ? 'Ver informe de deudas de un paciente' : tituloPagina}"/> · AnalitIQ</title>
 <link rel="stylesheet" href="<c:url value='/assets/app.css'/>">
 <link rel="stylesheet" href="<c:url value='/assets/theme.css'/>"></head>
 <body><a class="skip" href="#contenido">Ir al contenido</a>
 <header class="site-header"><div class="site-nav">
-<a class="brand" href="<c:url value='/deudas'/>" aria-label="AnalitIQ, inicio"><span class="brand-mark" aria-hidden="true">+</span>Analit<span>IQ</span></a>
-<nav aria-label="Principal"><a class="nav-active" href="<c:url value='/deudas'/>" aria-current="page"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>Consulta de deudas</a></nav>
+<a class="brand" href="<c:url value='/inicio'/>" aria-label="AnalitIQ, inicio"><span class="brand-mark" aria-hidden="true">+</span>Analit<span>IQ</span></a>
+<nav aria-label="Principal">
+<a href="<c:url value='/inicio'/>" class="${seccion == 'inicio' ? 'nav-active' : ''}" aria-current="${seccion == 'inicio' ? 'page' : 'false'}">Inicio</a>
+<a href="<c:url value='/tratamientos/registrar'/>" class="${seccion == 'registro' ? 'nav-active' : ''}" aria-current="${seccion == 'registro' ? 'page' : 'false'}">Registrar tratamiento</a>
+<a href="<c:url value='/deudas'/>" class="${empty seccion ? 'nav-active' : ''}" aria-current="${empty seccion ? 'page' : 'false'}">Informe de deudas</a>
+</nav>
 <span class="site-status"><span class="dot" aria-hidden="true"></span>Gestión odontológica</span>
 </div></header>
-<div class="workspace"><div class="topbar"><span>Pacientes <span class="separator">/</span> Informe de deudas</span><span class="readonly">Sólo lectura</span></div>
-<main id="contenido"><div class="eyebrow">GESTIÓN FINANCIERA</div>
+<div class="workspace"><div class="topbar"><span>AnalitIQ <span class="separator">/</span> <c:out value="${empty tituloPagina ? 'Informe de deudas' : tituloPagina}"/></span><c:if test="${empty seccion}"><span class="readonly">Sólo lectura</span></c:if></div>
+<main id="contenido"><div class="eyebrow">${empty seccion ? 'GESTIÓN FINANCIERA' : 'GESTIÓN ODONTOLÓGICA'}</div>

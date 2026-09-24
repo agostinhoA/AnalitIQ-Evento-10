@@ -3,4 +3,7 @@
 db.url=jdbc:mysql://127.0.0.1:3306/analitiq_demo?sslMode=DISABLED&allowPublicKeyRetrieval=true&connectionTimeZone=America/Argentina/Buenos_Aires
 db.user=analitiq_lectura
 db.password=REEMPLAZAR_POR_UN_SECRETO_LOCAL
+# Evento 3: cuenta separada con SELECT y únicamente INSERT de tratamientos.
+db.write.user=analitiq_registro
+db.write.password=REEMPLAZAR_POR_UN_SECRETO_LOCAL
 # En un servidor remoto usar sslMode=VERIFY_IDENTITY y certificados confiables.

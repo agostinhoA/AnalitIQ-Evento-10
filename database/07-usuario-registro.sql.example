@@ -1,0 +1,6 @@
+-- Copiar a un archivo privado y sustituir contraseña/host. No usar root en la app.
+CREATE USER 'analitiq_registro'@'localhost' IDENTIFIED BY 'REEMPLAZAR_POR_UN_SECRETO_LOCAL';
+GRANT SELECT ON analitiq_demo.* TO 'analitiq_registro'@'localhost';
+GRANT INSERT (codigo_tipo_tratamiento,dni_paciente,fecha_inicio_tratamiento,
+ fecha_finalizacion_tratamiento_estimada,objetivos,pronostico,activo,token_registro)
+ ON analitiq_demo.tratamientos TO 'analitiq_registro'@'localhost';

@@ -1,5 +1,19 @@
 # Verificación del evento 10
 
+## Integración posterior: menú y evento 3
+
+El 23/09/2026 se verificaron **33 pruebas Java** (incluida persistencia con cuenta restringida y concurrencia de ocho solicitudes), **10 pruebas HTTP del evento 3** contra la base aislada y **21 pruebas HTTP de regresión del evento 10** contra la demo, todas aprobadas. Las pruebas HTTP incluyen seis formularios simultáneos del mismo tipo: exactamente una alta y cinco rechazos de negocio. Los reenvíos del mismo formulario devuelven la confirmación original.
+
+Se aplicó la migración 06 a la demo con respaldo previo, conservando sus 15 tratamientos y sus valores. Presupuestos y consultas mantienen cero referencias huérfanas. Las altas de prueba se realizaron en `analitiq_evento3_test` y sus fixtures se limpiaron; no se gastaron los casos manuales disponibles en la demo. Se comprobó el menú y el formulario desplegados en el navegador. NetBeans GUI y despliegue público siguen sin verificarse.
+
+WAR actual: `target/analitiq.war`, idéntico al desplegado en Tomcat 8080. SHA-256: `2E9B658E8CB37B139E4B88824AC54686B3F11F3BB208EFF05432A308822AE42F`.
+
+Logs: `tmp/evento3-build.log`, `tmp/evento3-http.log`, `tmp/evento3-regresion-http.log`. Instalación, arquitectura, permisos, diferencias documentales y reproducción: [evento 3](evento3.md).
+
+## Historial anterior
+
+> Resultado vigente tras la recarga solicitada: **21 pruebas Java y 21 HTTP aprobadas**, datos sin activos duplicados y filtro de tratamiento sin distinguir mayúsculas/minúsculas. WAR y respaldo documentados en [recarga de la demo](recarga-datos-demo.md). Las secciones siguientes conservan el historial de verificaciones anteriores, sus hashes y sus datos de prueba; no describen la recarga posterior.
+
 Fecha: 23/09/2026. Windows, Java 17.0.12, Maven 3.9.3 de NetBeans 19, MySQL WAMP 8.4.7 y Tomcat 9.0.122. Resultado correspondiente a la [especificación vigente](evento10-2026-09-23.md), que reemplaza la regla anterior de corte por hoy y bloques vacíos.
 
 ## Ejecutado

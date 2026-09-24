@@ -1,18 +1,20 @@
-# AnalitIQ · Ver informe de deudas de un paciente
+# AnalitIQ · Tratamientos e informes
+
+**Nuevo: menú principal y evento 3, Registrar un tratamiento.** Abrir [el menú local](http://127.0.0.1:8080/analitiq/) para elegir el alta o el informe de deudas. El registro guarda en MySQL, valida el paciente y el catálogo, evita activos repetidos del mismo tipo y protege frente a reenvíos y concurrencia. No hay límite numérico de tratamientos. [Guía del evento 3: instalación, archivos y casos de prueba](docs/evento3.md).
 
 Proyecto Java web Maven, JSP/JSTL/EL, Servlets y JDBC. Implementa la especificación del **23/09/2026**, que tiene prioridad sobre el alcance anterior del coloquio y el TP. Conserva arquitectura, dependencias, Tomcat y configuración externa. El [rediseño visual](docs/rediseno-visual.md) usa blanco, gris oscuro y rojo, con navegación superior y adaptación a móvil.
 
 Se muestran únicamente cuotas en estado **Adeuda**, de tratamientos con **activo = SI**, cuya fecha de vencimiento esté dentro de **Desde/Hasta, ambos incluidos**. Ambas fechas son obligatorias. **No hay corte por hoy**: una cuota futura se incluye si está dentro del rango y sigue en Adeuda.
 
-El formulario admite DNI, nombre y apellido juntos, o identificación vacía para elegir de la lista completa. DNI y nombre/apellido simultáneos se rechazan. La lista completa exige selección incluso si contiene un único paciente; una búsqueda con criterio y una sola coincidencia genera el informe directamente. El nombre de tratamiento es opcional y se compara exactamente con el catálogo.
+El formulario admite DNI, nombre y apellido juntos, o identificación vacía para elegir de la lista completa. DNI y nombre/apellido simultáneos se rechazan. La lista completa exige selección incluso si contiene un único paciente; una búsqueda con criterio y una sola coincidencia genera el informe directamente. El nombre de tratamiento es opcional: se compara el nombre completo del catálogo sin distinguir mayúsculas y minúsculas.
 
 El informe identifica una vez al paciente y al rango; muestra un bloque por tratamiento con cuotas coincidentes y las columnas Cuota, Fecha de vencimiento y Saldo pendiente. Cada bloque incluye cantidad y suma exacta de sus filas con BigDecimal. No hay bloques vacíos, importes parciales ni operaciones de pago. Los estados se consultan por su relación y nombre, sin fijar IDs numéricos.
 
-Ruta principal: `/deudas`; `/pagos` abre el mismo evento corregido. Detalles y archivos modificados: [especificación implementada](docs/evento10-2026-09-23.md). Las imágenes mencionadas en el pedido no estaban adjuntas; se conservó el estilo existente. El TP y los documentos externos no fueron modificados.
+Rutas: `/inicio` (también `/`) abre el menú; `/tratamientos/registrar` abre el evento 3; `/deudas` y `/pagos` abren el informe del evento 10. Detalles: [evento 3](docs/evento3.md) y [evento 10](docs/evento10-2026-09-23.md). El TP y los documentos externos no fueron modificados.
 
 ## Inicio en esta computadora
 
-La preparación realizada creó una base nueva `analitiq_demo`, un usuario `analitiq_lectura` con permiso **SELECT** y un archivo privado `.local/analitiq.properties`. Las bases anteriores se conservaron. **No vuelvas a importar los scripts sobre esta base.**
+La demo `analitiq_demo` ya está preparada, incluida la migración 06 del evento 3. Tiene una cuenta `analitiq_lectura` con permiso **SELECT**, otra `analitiq_registro` con SELECT e INSERT limitado a tratamientos y configuración privada en `.local/analitiq.properties`. Las bases anteriores se conservaron. **No vuelvas a importar los scripts ni la migración sobre esta base.**
 
 El servidor portable de pruebas está en `.tools/apache-tomcat-9.0.122`. No se modificó el Tomcat de XAMPP. Desde la raíz del proyecto, en PowerShell 7:
 
@@ -35,7 +37,7 @@ Abrir [AnalitIQ local](http://127.0.0.1:8080/analitiq/). El servidor debe estar 
 | Servidor del proyecto | Tomcat 9.0.122 portable, descarga oficial con SHA-512 verificado |
 | APIs | Servlet 4.0, JSP 2.3, `javax.servlet`, JSTL 1.2 |
 | JDBC | MySQL Connector/J 9.7.0, compatible con MySQL 8.0+ y Java 8+ |
-| Conexiones | HikariCP 5.1.0, máximo 10 conexiones, sólo lectura |
+| Conexiones | HikariCP 5.1.0: pool de lectura y pool de registro separados, máximo 10 conexiones cada uno |
 
 [Tomcat 9](https://tomcat.apache.org/whichversion.html) implementa estas APIs y funciona con Java 17. Tomcat 10/11 cambia a `jakarta.servlet` y **no es un sustituto directo** para este WAR. El Apache HTTP Server de WAMP **no ejecuta JSP**: WAMP provee MySQL; Tomcat ejecuta la aplicación Java. Ver también la [compatibilidad de Connector/J 9.7](https://dev.mysql.com/doc/relnotes/connector-j/en/news-9-7-0.html).
 
@@ -46,7 +48,7 @@ Abrir [AnalitIQ local](http://127.0.0.1:8080/analitiq/). El servidor debe estar 
 3. Si no aparece soporte web/Tomcat, activar Java Web and EE desde Tools → Plugins.
 4. Services → Servers → Add Server → Apache Tomcat or TomEE. Seleccionar una distribución **Tomcat 9.0.x** (puede usarse la carpeta `.tools/apache-tomcat-9.0.122` disponible). Para otra máquina, descargar el ZIP Core de la [página oficial](https://tomcat.apache.org/download-90.cgi), verificar SHA-512 y descomprimir fuera del proyecto o en una carpeta local ignorada.
 5. Registrar el JDK 17 y configurar el usuario de despliegue que solicite NetBeans en ese Tomcat. Ese usuario de Tomcat es distinto del usuario MySQL. Si la integración requiere Manager, habilitar sólo los roles que solicita NetBeans (`manager-script` para despliegue automático) y mantener Manager limitado a la máquina local. No incluir esas credenciales en el proyecto.
-6. Properties del proyecto → Run: elegir Tomcat 9, contexto `/analitiq`, URL relativa `/deudas`.
+6. Properties del proyecto → Run: elegir Tomcat 9, contexto `/analitiq`, URL relativa `/inicio` para ver el menú.
 7. Antes de iniciar Tomcat, configurar el archivo externo como se explica abajo. Clean and Build genera `target/analitiq.war`. Run despliega el proyecto. La alternativa sin integración de Manager es copiar el WAR a `webapps` y ejecutar el script local.
 
 NetBeans puede usar su Maven incluido. Desde una terminal con Maven en PATH:
@@ -67,9 +69,11 @@ Los archivos están separados:
 - `database/02-datos-prueba.sql`: catálogos y datos ficticios, dentro de una transacción.
 - `database/03-usuario.sql.example`: ejemplo de usuario de aplicación y permiso SELECT.
 - `database/04-datos-prueba-deudas.sql`: casos nuevos para el evento corregido.
-- `database/05-datos-prueba-inconsistencias.sql`: casos opcionales para probar los avisos.
+- `database/05-datos-prueba-historicos.sql`: pacientes con tratamientos activos e históricos válidos, sin activos repetidos del mismo tipo.
+- `database/06-evento3.sql`: migración aditiva para códigos automáticos, un activo por tipo e idempotencia del alta. Ejecutar una sola vez con respaldo previo.
+- `database/07-usuario-registro.sql.example`: cuenta separada con permisos mínimos para el evento 3.
 
-El preparador automatizado crea la demo original (01/02); luego importar 04 y, si se desean esos casos, 05. No se necesita cambiar el esquema ni los permisos del usuario existente.
+El preparador automatizado crea la demo original (01/02); luego importar 04 y, si se desean esos casos, 05. Para habilitar el evento 3, aplicar 06 y crear la cuenta de 07 siguiendo [su guía](docs/evento3.md). El usuario de lectura conserva sus permisos.
 
 ### Opción automatizada en Windows
 
@@ -94,7 +98,7 @@ SOURCE database/02-datos-prueba.sql;
 
 Ejecutar desde la raíz del proyecto o indicar las rutas adecuadas al cliente. `CREATE DATABASE` falla si el nombre existe: **ante ese error, detenerse y no ejecutar los siguientes archivos**. No importar la demo en una base clínica existente.
 
-Copiar `03-usuario.sql.example` a un archivo privado fuera del repositorio, sustituir contraseña y host, y ejecutarlo. El usuario de aplicación sólo debe tener SELECT sobre las tablas del evento. Para una base existente, comparar tablas, columnas, caso, colación y relaciones antes de configurar su URL; no hay migración automática ni sustitución silenciosa de esquemas.
+Copiar `03-usuario.sql.example` a un archivo privado fuera del repositorio, sustituir contraseña y host, y ejecutarlo. Esta cuenta tiene sólo SELECT para el evento 10. Aplicar 06 y preparar 07 para la cuenta de registro. Para una base existente, comparar tablas, columnas, caso, colación y relaciones antes de configurar su URL; no hay migración automática ni sustitución silenciosa de esquemas.
 
 ## Configurar la conexión
 
@@ -104,6 +108,8 @@ La carga ocurre al iniciar la aplicación:
 
 1. Archivo indicado por `-Danalitiq.config=RUTA` o, si no se especifica esa propiedad Java, por `ANALITIQ_CONFIG`.
 2. Las variables `ANALITIQ_DB_URL`, `ANALITIQ_DB_USER` y `ANALITIQ_DB_PASSWORD` sobrescriben sus valores del archivo. También permiten configurar todo sin archivo.
+
+El evento 3 usa la misma URL y una cuenta independiente: `db.write.user`, `db.write.password`, sobrescribibles con `ANALITIQ_DB_WRITE_USER` y `ANALITIQ_DB_WRITE_PASSWORD`. Si falta esa configuración, sólo el registro queda indisponible. Ver el ejemplo actualizado, sin credenciales reales.
 
 Ejemplo PowerShell antes de iniciar Tomcat o NetBeans desde esa terminal:
 
@@ -134,9 +140,9 @@ Un paciente puede tener cualquier cantidad de tratamientos registrados, incluido
 
 ## Datos y recorridos para probar
 
-**En esta computadora no hay que ejecutar SQL ni reimportar datos.** Se reutiliza la demo existente, con los scripts 01/02/04/05 ya importados. Este cambio no modifica el esquema ni inserta/actualiza registros. En una instalación nueva, seguir la preparación anterior; 05 es opcional salvo para ejecutar todas las pruebas de integración.
+**En esta computadora no hay que ejecutar SQL ni reimportar datos.** Por pedido del usuario se borraron y regeneraron los registros de `analitiq_demo` usando 02/04/05, con respaldo previo y sin cambiar el esquema. Hay 10 pacientes, 15 tratamientos y 14 cuotas; no hay activos duplicados por paciente y tipo. Ver [recarga de la demo](docs/recarga-datos-demo.md). En una instalación nueva, seguir la preparación anterior; 05 es opcional salvo para ejecutar todas las pruebas de integración.
 
-Búsqueda de nombres/apellidos y tratamiento exacta, incluyendo mayúsculas y tildes. Valores existentes del catálogo: `Ortodoncia`, `Implante`, `Conducto`. Un tratamiento inexistente devuelve un informe sin cuotas, no una lista de pacientes.
+Búsqueda de nombres/apellidos exacta, incluyendo mayúsculas y tildes. El tratamiento requiere el nombre completo, pero acepta mayúsculas y minúsculas: `ortodoncia`, `Ortodoncia` y `ORTODONCIA` devuelven lo mismo. Valores existentes del catálogo: `Ortodoncia`, `Implante`, `Conducto`. Un tratamiento inexistente devuelve un informe sin cuotas, no una lista de pacientes.
 
 Salvo indicación distinta, usar **Desde 01/01/2026, Hasta 31/12/2027**, tratamiento vacío:
 
@@ -152,7 +158,7 @@ Salvo indicación distinta, usar **Desde 01/01/2026, Hasta 31/12/2027**, tratami
 | DNI `45000001`, Desde 01/09/2026, Hasta 15/09/2026 | Ortodoncia, cuotas 2 y 3 (2302/2303), cantidad 2, total 20.000,00; ambas fechas límite incluidas |
 | DNI `45000001`, Desde/Hasta 15/09/2026 | Sólo cuota 3 (2303), cantidad 1, total 10.000,00 |
 | DNI `45000002`, `37888999`, `40123456` o `30999888` | Informe sin cuotas; tratamientos inactivos/sin cuotas no crean bloques vacíos |
-| DNI `45000003` o `45000004` | Avisos sólo por tipos activos repetidos (datos ficticios de 05); no existe límite numérico de tratamientos |
+| DNI `45000003` o `45000004` | Eva/Nora: tratamientos activos e históricos válidos, sin cuotas ni avisos de inconsistencia; no existe límite numérico de tratamientos |
 | DNI `99999999` o `Nadie` / `Inexistente` | “No se encontraron pacientes”; permite corregir los campos y no muestra el informe anterior |
 | DNI junto con nombre/apellido; sólo nombre; sólo apellido | HTTP 400 y explicación; no se interpreta como lista completa |
 | Fechas vacías, inválidas o Desde posterior a Hasta | HTTP 400; no se ejecuta una consulta con rango inválido |
@@ -183,7 +189,7 @@ python scripts/probar-http.py http://127.0.0.1:8080/analitiq
 
 La suite prueba formularios/JSP/Servlet/MySQL reales, validación, lista completa, homónimos, conservación de filtros, ausencia de datos anteriores, tratamiento opcional, exclusiones, fechas, totales/cantidades, sesiones, CSRF, escape HTML y concurrencia. Los resultados son independientes del día actual; los datos ficticios tienen fechas de 2026.
 
-Resultados: **21 pruebas Java y 20 HTTP aprobadas** el 23/09/2026. Reportes en `target/surefire-reports` y detalles en [verificación](docs/verificacion.md).
+Resultados con el evento 3: **33 pruebas Java, 10 HTTP de registro y 21 HTTP de regresión del evento 10 aprobadas**. Las escrituras se prueban exclusivamente en `analitiq_evento3_test`, usando una instancia de Tomcat en 8081. [Preparación y comandos](docs/evento3.md). Reportes en `target/surefire-reports` y detalles en [verificación](docs/verificacion.md).
 
 ## Estructura y mantenimiento
 
@@ -205,16 +211,16 @@ docs/            decisiones y verificación
 target/analitiq.war  artefacto generado
 ```
 
-Las JSP no contienen SQL ni scriptlets. Sólo presentan modelos con JSTL/EL; los datos se escapan con `c:out`. El servlet maneja peticiones HTTP sucesivas y redirecciones 303. La aplicación usa consultas parametrizadas, cierre de recursos, pool de conexiones y snapshots de lectura. Sólo el administrador de instalación escribe la base. No hay datos ficticios incorporados en listas del código de producción.
+Las JSP no contienen SQL ni scriptlets. Sólo presentan modelos con JSTL/EL; los datos se escapan con `c:out`. Los servlets manejan peticiones HTTP sucesivas y redirecciones 303. La aplicación usa consultas parametrizadas, cierre de recursos y pools separados: el evento 10 sólo lee; el evento 3 inserta tratamientos mediante su cuenta restringida. No hay datos ficticios incorporados en listas del código de producción.
 
 ## Preparar la publicación y migrar la base
 
 1. Elegir un servidor con JDK 17+, Tomcat 9 actualizado y MySQL 8.4+. Un hosting sólo PHP/Apache no puede ejecutar este WAR. No se ha contratado ni publicado un hosting.
-2. Para una demo nueva, importar los scripts de estructura y datos ficticios en un esquema nuevo. Crear el usuario de lectura restringido al host donde corre Tomcat; no usar root ni abrir MySQL a todo internet.
-3. Para trasladar la demo con datos existentes, usar un respaldo consistente, por ejemplo `mysqldump -h HOST_ORIGEN -u USUARIO_RESPALDO -p --single-transaction --no-tablespaces --set-gtid-purged=OFF --result-file=analitiq-demo.sql analitiq_demo`. No exportar el esquema `mysql` ni cuentas/credenciales. Crear manualmente un esquema **nuevo y vacío** en destino con utf8mb4 y la colación acordada; importar el dump allí. No ejecutar el seed después del dump ni sobrescribir una base existente. Recrear el usuario de lectura por separado.
+2. Para una demo nueva, importar estructura, datos ficticios y migración 06 en un esquema nuevo. Crear las cuentas de lectura y registro (ejemplos 03/07) restringidas al host donde corre Tomcat; no usar root ni abrir MySQL a todo internet.
+3. Para trasladar la demo con datos existentes, usar un respaldo consistente, por ejemplo `mysqldump -h HOST_ORIGEN -u USUARIO_RESPALDO -p --single-transaction --no-tablespaces --set-gtid-purged=OFF --result-file=analitiq-demo.sql analitiq_demo`. No exportar el esquema `mysql` ni cuentas/credenciales. Crear manualmente un esquema **nuevo y vacío** en destino con utf8mb4 y la colación acordada; importar el dump allí. No ejecutar el seed después del dump ni sobrescribir una base existente. Si el dump ya incluye 06, no repetir la migración. Recrear ambas cuentas por separado.
 4. Configurar la URL remota y secretos fuera del WAR, con TLS. Restringir lectura del archivo al usuario que ejecuta Tomcat; un gestor de secretos puede inyectar variables de entorno. No copiar `.local`, `.tools`, dumps privados o credenciales del equipo al servidor público.
 5. Desplegar el WAR. Configurar HTTPS en el frontal y el dominio público; si se usa proxy, preservar el contexto `/analitiq` y configurar correctamente el conector/Tomcat para reconocer HTTPS. Configurar cookie de sesión `Secure` en producción y `SameSite=Lax` en `CookieProcessor` de Tomcat. `HttpOnly` y sesiones sólo por cookie ya están definidos.
 6. Repetir las pruebas HTTP cambiando la URL base al dominio público. Validar reinicio, logs, codificación, conectividad JDBC/TLS, copias de respaldo y restore en el destino. Los enlaces internos usan el contexto de la aplicación, por lo que no necesitan cambiarse para otro host.
-7. Las pruebas públicas deben contener **sólo datos ficticios**. El evento no incluye login ni autorización del odontólogo: antes de incorporar datos reales se debe acordar ese alcance e implementarlo. El WAR actual permite consultar la demo a cualquier visitante.
+7. Las pruebas públicas deben contener **sólo datos ficticios**. No hay login ni autorización del odontólogo: antes de incorporar datos reales se debe acordar ese alcance e implementarlo. El WAR actual permite consultar y registrar tratamientos de la demo a cualquier visitante.
 
 Para varios usuarios en una instancia, cada sesión conserva su propio flujo. Para varias instancias detrás de un balanceador, configurar afinidad de sesión o almacenamiento de sesiones compartido. El pool debe dimensionarse con el límite de conexiones del MySQL de destino. Las consultas jerárquicas están pensadas para el volumen inicial; antes de grandes historiales medir tiempos y evaluar carga agrupada/paginación sin cambiar el significado del evento.

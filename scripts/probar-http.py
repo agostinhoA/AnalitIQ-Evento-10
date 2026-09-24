@@ -202,16 +202,24 @@ class FlujosHttp(unittest.TestCase):
             self.assertEqual(400, self.b.search(dni='30111222', desde=desde, hasta=hasta)[0])
         self.assertEqual(400, self.b.post(accion='buscar', dni='30111222')[0])
 
-    def test_inconsistencias_avisadas_sin_bloques_vacios(self):
+    def test_historicos_no_generan_inconsistencias_ni_bloques_vacios(self):
         for dni in ['45000003','45000004']:
             status, body, _, _ = self.b.search(dni=dni, tratamiento='Implante')
             self.assertEqual(200, status)
             self.assertEqual({}, bloques(body))
-            self.assertIn('Inconsistencia:', body)
+            self.assertNotIn('Inconsistencia:', body)
             self.assertIn(VACIO, body)
-            self.assertEqual(1, body.count('Inconsistencia:'))
-            self.assertIn('Sólo se permite un tratamiento activo por tipo', body)
             self.assertNotIn('máximo permitido', body)
+
+    def test_tratamiento_ignora_mayusculas_y_conserva_filtro(self):
+        for nombre in ['ortodoncia', 'Ortodoncia', 'ORTODONCIA', ' oRtOdOnCiA ']:
+            status, body, _, _ = self.b.search(dni='45000001', tratamiento=nombre, hasta='2026-09-15')
+            self.assertEqual(200, status)
+            self.assertEqual(['2302', '2303'], cuotas(body))
+        _, _, url, _ = self.b.search(tratamiento='implante', desde='2026-01-01', hasta='2027-12-31')
+        status, body, _, _ = self.b.post(accion='seleccionar', busqueda=flujo(url), dni='45000001')
+        self.assertEqual(200, status)
+        self.assertEqual(['2308'], cuotas(body))
 
     def test_sin_deudas_con_identificacion_y_rango(self):
         for dni in ['30999888','35666777','45000002','37888999','40123456']:
@@ -257,7 +265,10 @@ class FlujosHttp(unittest.TestCase):
             self.assertTrue(all(executor.map(run, ['30111222','45000001','30999888','45000002'] * 3)))
 
     def test_inicio_compatibilidad_y_jsp_privadas(self):
-        for path in ['/', '/pagos', '/deudas']:
+        status, body, _, _ = self.b.get('/')
+        self.assertEqual(200, status)
+        self.assertIn('Tu consultorio, en un solo lugar.', body)
+        for path in ['/pagos', '/deudas']:
             status, body, _, _ = self.b.get(path)
             self.assertEqual(200,status)
             self.assertIn(TITULO,body)

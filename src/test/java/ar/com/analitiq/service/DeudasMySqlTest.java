@@ -39,7 +39,10 @@ class DeudasMySqlTest {
         assertEquals(List.of(2304L),cuotas(s.consultar("45000001",filtro("2026-09-30","2026-09-30",""))));
     }
     @Test void tratamientoExactoActivoDelPacienteYParametrosLiterales() throws Exception {
-        assertEquals(List.of(2308L),cuotas(s.consultar("45000001",filtro("2026-01-01","2027-12-31"," Implante "))));
+        for(String nombre:List.of(" Implante ","implante","IMPLANTE","iMpLaNtE"))
+            assertEquals(List.of(2308L),cuotas(s.consultar("45000001",filtro("2026-01-01","2027-12-31",nombre))));
+        for(String nombre:List.of("ortodoncia","Ortodoncia","ORTODONCIA"))
+            assertEquals(List.of(2302L,2303L),cuotas(s.consultar("45000001",filtro("2026-09-01","2026-09-15",nombre))));
         for(String nombre:List.of("Conducto","No existe","%' OR 1=1 --"))
             assertTrue(s.consultar("45000001",filtro("2026-01-01","2027-12-31",nombre)).getTratamientos().isEmpty());
         assertTrue(s.consultar("45000002",filtro("2026-01-01","2027-12-31","Conducto")).getTratamientos().isEmpty());
@@ -53,11 +56,10 @@ class DeudasMySqlTest {
             assertTrue(i.getTratamientos().isEmpty());
         }
     }
-    @Test void inconsistenciasPersistenAunqueNoHayaCuotasCoincidentes() throws Exception {
+    @Test void datosRegeneradosNoTienenActivosDuplicados() throws Exception {
         var filtros=filtro("2026-01-01","2027-12-31","Implante");
-        var repetidos=s.consultar("45000003",filtros); var cuatro=s.consultar("45000004",filtros);
-        assertTrue(repetidos.getTratamientos().isEmpty()); assertEquals(1,repetidos.getAvisos().size());
-        assertTrue(cuatro.getTratamientos().isEmpty()); assertEquals(1,cuatro.getAvisos().size());
+        for(var paciente:s.buscar(CriterioBusqueda.validarEntrada("","","")))
+            assertTrue(s.consultar(paciente.getDni(),filtros).getAvisos().isEmpty());
     }
     @Test void listaCompletaYBusquedasReales() throws Exception {
         assertEquals(10,s.buscar(CriterioBusqueda.validarEntrada("","","")).size());

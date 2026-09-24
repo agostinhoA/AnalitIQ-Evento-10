@@ -19,7 +19,7 @@ public final class DeudasDao {
               AND cu.fecha_vencimiento>=? AND cu.fecha_vencimiento<=?
             """;
         boolean porNombre=!filtros.getTratamiento().isEmpty();
-        if(porNombre) sql+=" AND tt.nombre_tratamiento=? ";
+        if(porNombre) sql+=" AND LOWER(tt.nombre_tratamiento)=LOWER(?) ";
         sql+=" ORDER BY t.codigo_tratamiento,cu.fecha_vencimiento,cu.nro_cuota,cu.codigo_cuota";
         Map<Long,List<Cuota>> resultado=new LinkedHashMap<>();
         try(PreparedStatement s=c.prepareStatement(sql)) {
