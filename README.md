@@ -6,11 +6,11 @@
 
 Proyecto Java web Maven, JSP/JSTL/EL, Servlets y JDBC. Implementa la especificación del **23/09/2026**, que tiene prioridad sobre el alcance anterior del coloquio y el TP. Conserva arquitectura, dependencias, Tomcat y configuración externa. El [rediseño visual](docs/rediseno-visual.md) usa blanco, gris oscuro y rojo, con navegación superior y adaptación a móvil.
 
-Se muestran únicamente cuotas en estado **Adeuda**, de tratamientos con **activo = SI**, cuya fecha de vencimiento esté dentro de **Desde/Hasta, ambos incluidos**. Ambas fechas son obligatorias. **No hay corte por hoy**: una cuota futura se incluye si está dentro del rango y sigue en Adeuda.
+Se muestran únicamente cuotas en estado **Adeuda** de tratamientos con **activo = SI**. Las fechas **Desde** y **Hasta** son opcionales e independientes: si se ingresan, limitan los vencimientos de forma inclusiva; si quedan vacías, se consultan todos los vencimientos. **No hay corte por hoy**: una cuota futura se incluye mientras siga en Adeuda.
 
-El formulario admite DNI, nombre y apellido juntos, o identificación vacía para elegir entre todos los pacientes que tengan cuotas pendientes dentro del rango. DNI y nombre/apellido simultáneos se rechazan. La lista filtrada exige selección incluso si contiene un único paciente; una búsqueda con criterio y una sola coincidencia genera el informe directamente. El tratamiento es opcional y se elige del mismo catálogo que usa Registrar tratamiento.
+El formulario admite DNI, nombre y apellido juntos, o identificación vacía para elegir entre todos los pacientes que tengan cuotas pendientes según los filtros aplicados. DNI y nombre/apellido simultáneos se rechazan. La lista agrupa a los pacientes por tratamiento; un paciente puede aparecer en más de un grupo si debe cuotas de distintos tipos. La lista exige selección incluso si contiene un único paciente; una búsqueda con criterio y una sola coincidencia genera el informe directamente. El tratamiento es opcional y se elige del mismo catálogo que usa Registrar tratamiento.
 
-El informe identifica una vez al paciente y al rango; muestra un bloque por tratamiento con cuotas coincidentes y las columnas Cuota, Fecha de vencimiento y Saldo pendiente. Cada bloque incluye cantidad y suma exacta de sus filas con BigDecimal. No hay bloques vacíos, importes parciales ni operaciones de pago. Los estados se consultan por su relación y nombre, sin fijar IDs numéricos.
+El informe identifica una vez al paciente y los límites de fecha aplicados, si los hay; muestra un bloque por tratamiento con cuotas coincidentes y las columnas Cuota, Fecha de vencimiento y Saldo pendiente. Cada bloque incluye cantidad y suma exacta de sus filas con BigDecimal. No hay bloques vacíos, importes parciales ni operaciones de pago. Los estados se consultan por su relación y nombre, sin fijar IDs numéricos.
 
 Rutas: `/inicio` (también `/`) abre el menú; `/tratamientos/registrar` abre el evento 3; `/deudas` y `/pagos` abren el informe del evento 10. Detalles: [evento 3](docs/evento3.md) y [evento 10](docs/evento10-2026-09-23.md). El TP y los documentos externos no fueron modificados.
 
@@ -146,7 +146,7 @@ Un paciente puede tener cualquier cantidad de tratamientos registrados, incluido
 
 **En esta computadora no hay que ejecutar SQL ni reimportar datos.** Por pedido del usuario se borraron y regeneraron los registros de `analitiq_demo` usando 02/04/05, con respaldo previo y sin cambiar el esquema. Hay 10 pacientes, 15 tratamientos y 14 cuotas; no hay activos duplicados por paciente y tipo. Ver [recarga de la demo](docs/recarga-datos-demo.md). En una instalación nueva, seguir la preparación anterior; 05 es opcional salvo para ejecutar todas las pruebas de integración.
 
-Búsqueda de nombres/apellidos exacta, incluyendo mayúsculas y tildes. El selector muestra los valores del catálogo, actualmente `Ortodoncia`, `Implante` y `Conducto`. Sólo se muestran pacientes con cuotas en estado Adeuda de tratamientos activos, dentro del rango y del tratamiento elegido. Un valor ajeno al catálogo se rechaza.
+Búsqueda de nombres/apellidos exacta, incluyendo mayúsculas y tildes. El selector muestra los valores del catálogo, actualmente `Ortodoncia`, `Implante` y `Conducto`. Sólo se muestran pacientes con cuotas en estado Adeuda de tratamientos activos que coincidan con el tratamiento y las fechas opcionales. Un valor ajeno al catálogo se rechaza.
 
 Salvo indicación distinta, usar **Desde 01/01/2026, Hasta 31/12/2027**, tratamiento vacío:
 
@@ -155,7 +155,7 @@ Salvo indicación distinta, usar **Desde 01/01/2026, Hasta 31/12/2027**, tratami
 | DNI `30111222` | Juan Pérez, Ortodoncia: cuota 3 (603), cantidad 1, total 30.000,00; cuotas pagadas y consultas excluidas |
 | Nombre `Lucía`, apellido `Gómez` | Si no tiene cuotas pendientes en el rango, no aparece en los resultados |
 | Nombre `Juan`, apellido `Pérez` | Sólo aparecen los homónimos con cuotas pendientes en el rango |
-| DNI, nombre y apellido vacíos | Lista de pacientes con cuotas pendientes en el rango, cada uno con su DNI y botón Seleccionar; aún no se genera informe |
+| DNI, nombre y apellido vacíos | Lista agrupada por tratamiento de pacientes con cuotas pendientes para las fechas indicadas, cada uno con su DNI y botón Seleccionar; aún no se genera informe |
 | DNI `45000001` | Sofía Molina: Ortodoncia con 5 cuotas, total 50.000,00; Implante con 1 cuota, total 20.000,00. No aparece el Conducto sin cuotas |
 | DNI `45000001`, tratamiento `Implante` | Sólo Implante, cuota 2 (2308), vence 01/12/2026, total 20.000,00; aparece aunque esa fecha sea posterior a hoy |
 | DNI `45000001`, tratamiento `Conducto` | No aparece en los resultados si no tiene cuotas pendientes de Conducto |
@@ -165,7 +165,9 @@ Salvo indicación distinta, usar **Desde 01/01/2026, Hasta 31/12/2027**, tratami
 | DNI `45000003` o `45000004` | Eva/Nora no aparecen si no tienen cuotas pendientes dentro del rango |
 | DNI `99999999` o `Nadie` / `Inexistente` | “No se encontraron pacientes”; permite corregir los campos y no muestra el informe anterior |
 | DNI junto con nombre/apellido; sólo nombre; sólo apellido | HTTP 400 y explicación; no se interpreta como lista completa |
-| Fechas vacías, inválidas o Desde posterior a Hasta | HTTP 400; no se ejecuta una consulta con rango inválido |
+| Fechas vacías | Incluye todos los vencimientos; agrupa a los pacientes con cuotas pendientes por tratamiento |
+| Sólo Desde o sólo Hasta | Filtra desde esa fecha o hasta esa fecha, inclusive |
+| Fechas inválidas o Desde posterior a Hasta | HTTP 400; no se ejecuta una consulta con fechas inválidas |
 | Selección alterada para enviar el DNI de un paciente fuera de la lista filtrada | HTTP 400; sólo se permiten los pacientes recuperados por esa búsqueda |
 
 Tratamiento y fechas se guardan en el servidor durante la selección. Cambiar los campos ocultos o enviar otros filtros en esa solicitud no los reemplaza. “Modificar filtros” → “Aplicar filtro” conserva el paciente y crea otro flujo, sin alterar informes abiertos en otras pestañas. Un filtro inválido muestra un error y conserva el informe anterior, identificado con sus criterios. “Cambiar paciente” regresa a la lista de pacientes ya filtrados; “Iniciar otra búsqueda” abre un formulario nuevo. Cada flujo vence a los 15 minutos; la sesión a los 20 de inactividad.
@@ -195,7 +197,7 @@ La suite prueba formularios/JSP/Servlet/MySQL reales, validación, lista filtrad
 
 Resultados con el evento 3: **33 pruebas Java, 10 HTTP de registro y 21 HTTP de regresión del evento 10 aprobadas**. Las escrituras se prueban exclusivamente en `analitiq_evento3_test`, usando una instancia de Tomcat en 8081. [Preparación y comandos](docs/evento3.md). Reportes en `target/surefire-reports` y detalles en [verificación](docs/verificacion.md).
 
-En la instalación local actual se ejecutaron **28 pruebas Java sin fallos** (7 de escritura omitidas por requerir `analitiq_evento3_test`) y **23 pruebas HTTP del evento 10 aprobadas** contra `http://127.0.0.1:8080/analitiq/`.
+En la instalación local actual se ejecutaron **30 pruebas Java sin fallos** (7 de escritura omitidas por requerir `analitiq_evento3_test`) y **25 pruebas HTTP del evento 10 aprobadas** contra `http://127.0.0.1:8080/analitiq/`.
 
 ## Estructura y mantenimiento
 

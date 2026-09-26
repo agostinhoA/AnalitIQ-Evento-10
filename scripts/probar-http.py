@@ -186,6 +186,33 @@ class FlujosHttp(unittest.TestCase):
         _, body, _, _ = self.b.search(dni='45000001', desde='2026-09-15', hasta='2026-09-15')
         self.assertEqual(['2303'], cuotas(body))
 
+    def test_sin_fechas_agrupa_pacientes_y_tratamiento_filtra(self):
+        status, body, url, _ = self.b.search(desde='', hasta='')
+        self.assertEqual(200, status)
+        self.assertIn('Sin límite de fechas', body)
+        self.assertIn('data-tratamiento="Implante"', body)
+        self.assertIn('data-tratamiento="Ortodoncia"', body)
+        self.assertEqual(2, body.count('name="dni" value="45000001"'))
+        self.assertNotIn('45000004', body)  # Nora no tiene cuotas pendientes.
+        _, informe, informe_url, _ = self.b.post(accion='seleccionar', busqueda=flujo(url), dni='45000001')
+        self.assertEqual(['2301','2302','2303','2304','2305','2308'], cuotas(informe))
+        self.assertEqual(2, informe.count('Sin límite'))
+        enlace = html.unescape(re.search(r'href="([^"]+)">Cambiar paciente</a>', informe).group(1))
+        _, candidatos, _, _ = self.b.get(urllib.parse.urljoin(BASE+'/', enlace))
+        self.assertIn('Sin límite de fechas', candidatos)
+        self.assertEqual(2, candidatos.count('class="patient-group"'))
+        status, solo_implante, _, _ = self.b.search(tratamiento='Implante', desde='', hasta='')
+        self.assertEqual(200, status)
+        self.assertEqual(1, solo_implante.count('class="patient-group"'))
+        self.assertIn('data-tratamiento="Implante"', solo_implante)
+        self.assertNotIn('data-tratamiento="Ortodoncia"', solo_implante)
+
+    def test_fecha_desde_o_hasta_independiente(self):
+        _, body, _, _ = self.b.search(dni='45000001', desde='2026-12-01', hasta='')
+        self.assertEqual(['2308'], cuotas(body))
+        _, body, _, _ = self.b.search(dni='45000001', desde='', hasta='2026-08-31')
+        self.assertEqual(['2301'], cuotas(body))
+
     def test_sin_corte_por_hoy_orden_cantidades_totales_y_no_duplicados(self):
         _, body, _, _ = self.b.search(dni='45000001', desde='2026-01-01', hasta='2027-12-31')
         self.assertEqual(['2301', '2302', '2303', '2304', '2305', '2308'], cuotas(body))
@@ -237,11 +264,11 @@ class FlujosHttp(unittest.TestCase):
         self.assertEqual(['2302', '2303'], cuotas(body))
         self.assertEqual(['2302', '2303'], cuotas(self.b.get(url)[1]))
 
-    def test_rango_obligatorio_y_calendario(self):
-        for desde, hasta in [('', '2026-09-18'), ('2026-09-18', ''), ('2026-09-20', '2026-09-18'),
+    def test_fechas_opcionales_y_calendario(self):
+        for desde, hasta in [('2026-09-20', '2026-09-18'),
                              ('2026-02-30','2026-09-18'), ("2026-09-01' OR 1=1 --",'2026-09-18')]:
             self.assertEqual(400, self.b.search(dni='30111222', desde=desde, hasta=hasta)[0])
-        self.assertEqual(400, self.b.post(accion='buscar', dni='30111222')[0])
+        self.assertEqual(200, self.b.post(accion='buscar', dni='30111222')[0])
 
     def test_historicos_no_generan_inconsistencias_ni_bloques_vacios(self):
         for dni in ['45000003','45000004']:

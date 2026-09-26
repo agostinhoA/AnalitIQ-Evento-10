@@ -16,16 +16,19 @@ public final class DeudasDao {
             JOIN cuotas cu ON cu.codigo_presupuesto=p.codigo_presupuesto
             JOIN estados_cuotas ec ON ec.codigo_estado_cuota=cu.codigo_estado_cuota
             WHERE t.dni_paciente=? AND t.activo=? AND ec.tipo_estado=?
-              AND cu.fecha_vencimiento>=? AND cu.fecha_vencimiento<=?
             """;
+        if(filtros.getRango().getDesde()!=null) sql+=" AND cu.fecha_vencimiento>=? ";
+        if(filtros.getRango().getHasta()!=null) sql+=" AND cu.fecha_vencimiento<=? ";
         boolean porNombre=!filtros.getTratamiento().isEmpty();
         if(porNombre) sql+=" AND LOWER(tt.nombre_tratamiento)=LOWER(?) ";
         sql+=" ORDER BY t.codigo_tratamiento,cu.fecha_vencimiento,cu.nro_cuota,cu.codigo_cuota";
         Map<Long,List<Cuota>> resultado=new LinkedHashMap<>();
         try(PreparedStatement s=c.prepareStatement(sql)) {
             s.setString(1,dni); s.setString(2,"SI"); s.setString(3,"Adeuda");
-            s.setDate(4,filtros.getRango().getDesdeFecha()); s.setDate(5,filtros.getRango().getHastaFecha());
-            if(porNombre) s.setString(6,filtros.getTratamiento());
+            int index=4;
+            if(filtros.getRango().getDesde()!=null) s.setDate(index++,filtros.getRango().getDesdeFecha());
+            if(filtros.getRango().getHasta()!=null) s.setDate(index++,filtros.getRango().getHastaFecha());
+            if(porNombre) s.setString(index,filtros.getTratamiento());
             s.setQueryTimeout(10);
             try(ResultSet r=s.executeQuery()) {
                 while(r.next()) resultado.computeIfAbsent(r.getLong(1),k -> new ArrayList<>())

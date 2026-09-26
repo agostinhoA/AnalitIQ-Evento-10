@@ -79,6 +79,19 @@ class DeudasMySqlTest {
         assertEquals(List.of("45000001"),s.buscar(todos,filtro("2026-12-01","2026-12-01","Implante"))
             .stream().map(Paciente::getDni).toList());
     }
+    @Test void sinFechasAgrupaPorTratamientoYAdmiteUnLimite() throws Exception {
+        var todos=CriterioBusqueda.validarEntrada("","","");
+        var resultado=s.buscarAgrupado(todos,filtro("","",""));
+        assertEquals(List.of("Implante","Ortodoncia"),List.copyOf(resultado.getGrupos().keySet()));
+        assertEquals(List.of("45000001"),resultado.getGrupos().get("Implante").stream().map(Paciente::getDni).toList());
+        assertEquals(List.of("45000001","30111222"),resultado.getGrupos().get("Ortodoncia").stream().map(Paciente::getDni).toList());
+        assertEquals(List.of("45000001","30111222"),resultado.getPacientes().stream().map(Paciente::getDni).toList());
+        assertTrue(resultado.getPacientes().stream().noneMatch(p -> p.getDni().equals("45000004")));
+        assertEquals(List.of(2301L,2302L,2303L,2304L,2305L,2308L),
+            cuotas(s.consultar("45000001",filtro("","",""))));
+        assertEquals(List.of(2308L),cuotas(s.consultar("45000001",filtro("2026-12-01","",""))));
+        assertEquals(List.of(2301L),cuotas(s.consultar("45000001",filtro("","2026-08-31",""))));
+    }
     @Test void filtroUsaCatalogoDeTratamientos() throws Exception {
         assertEquals(List.of("Conducto","Implante","Ortodoncia"),s.catalogo().stream().map(TipoTratamiento::getNombre).toList());
         assertEquals("Ortodoncia",s.validarFiltro(filtro("2026-09-01","2026-09-30"," oRtOdOnCiA ")).getTratamiento());

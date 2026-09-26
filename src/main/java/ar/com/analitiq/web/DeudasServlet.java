@@ -56,7 +56,7 @@ public final class DeudasServlet extends HttpServlet {
                 DeudasService service=obtenerServicio(req,res);
                 if(service==null) return;
                 FiltrosDeuda filtros=service.validarFiltro(filtrosEnviados(req));
-                id=busquedas.agregar(service.buscar(criterio,filtros),filtros,criterio,Instant.now());
+                id=busquedas.agregar(service.buscarAgrupado(criterio,filtros),filtros,criterio,Instant.now());
             } else if("seleccionar".equals(action)) {
                 // El rango se toma del servidor, no de campos alterables del formulario.
                 id=busquedas.seleccionar(req.getParameter("busqueda"),req.getParameter("dni"),Instant.now());
@@ -66,7 +66,7 @@ public final class DeudasServlet extends HttpServlet {
                 DeudasService service=obtenerServicio(req,res);
                 if(service==null) return;
                 FiltrosDeuda filtros=service.validarFiltro(filtrosEnviados(req));
-                id=busquedas.filtrar(anterior,service.buscar(flujo.getCriterio(),filtros),filtros,Instant.now());
+                id=busquedas.filtrar(anterior,service.buscarAgrupado(flujo.getCriterio(),filtros),filtros,Instant.now());
             } else throw new IllegalArgumentException("Solicitud no válida. Iniciá una nueva búsqueda.");
             res.setStatus(303);
             res.setHeader("Location",req.getContextPath()+"/deudas?busqueda="+id);
@@ -90,8 +90,8 @@ public final class DeudasServlet extends HttpServlet {
     }
     private void contexto(HttpServletRequest req,String id,BusquedaSesion.Flujo flujo) {
         req.setAttribute("busquedaId",id); req.setAttribute("flujo",flujo);
-        req.setAttribute("desdeValor",flujo.getRango().getDesde().toString());
-        req.setAttribute("hastaValor",flujo.getRango().getHasta().toString());
+        req.setAttribute("desdeValor",flujo.getRango().getDesde()==null ? "" : flujo.getRango().getDesde().toString());
+        req.setAttribute("hastaValor",flujo.getRango().getHasta()==null ? "" : flujo.getRango().getHasta().toString());
         req.setAttribute("tratamientoValor",flujo.getFiltros().getTratamiento());
         req.setAttribute("dniValor",flujo.getCriterio().dni());
         req.setAttribute("nombreValor",flujo.getCriterio().nombre());

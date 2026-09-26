@@ -27,8 +27,11 @@ public final class DeudasService {
         try(Connection c=ds.getConnection()) { return pacientes.buscar(c,criterio); }
     }
     public List<Paciente> buscar(CriterioBusqueda criterio,FiltrosDeuda filtros) throws SQLException {
+        return buscarAgrupado(criterio,filtros).getPacientes();
+    }
+    public ResultadoBusquedaDeudas buscarAgrupado(CriterioBusqueda criterio,FiltrosDeuda filtros) throws SQLException {
         Objects.requireNonNull(filtros,"Se requieren filtros validados.");
-        try(Connection c=ds.getConnection()) { return pacientes.buscarConDeudas(c,criterio,filtros); }
+        try(Connection c=ds.getConnection()) { return pacientes.buscarAgrupadoConDeudas(c,criterio,filtros); }
     }
     public InformeDeudas consultar(String dni, FiltrosDeuda filtros) throws SQLException {
         Objects.requireNonNull(filtros,"Se requieren filtros validados.");
