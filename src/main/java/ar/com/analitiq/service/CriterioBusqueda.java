@@ -19,9 +19,11 @@ public record CriterioBusqueda(String dni, String nombre, String apellido) imple
         }
         if (!"nombre".equals(modo)) throw new IllegalArgumentException("Elegí buscar por DNI o por nombre y apellido.");
         nombre = limpiar(nombre); apellido = limpiar(apellido);
-        if (!esNombre(nombre) || !esNombre(apellido))
-            throw new IllegalArgumentException("Ingresá nombre y apellido completos, sólo con letras y espacios (máximo 100 caracteres cada uno).");
-        return new CriterioBusqueda(null,nombre,apellido);
+        if (nombre.isEmpty() && apellido.isEmpty())
+            throw new IllegalArgumentException("Ingresá un nombre, un apellido o ambos.");
+        if ((!nombre.isEmpty() && !esNombre(nombre)) || (!apellido.isEmpty() && !esNombre(apellido)))
+            throw new IllegalArgumentException("Ingresá nombre y/o apellido, sólo con letras y espacios (máximo 100 caracteres cada uno).");
+        return new CriterioBusqueda(null,nombre.isEmpty() ? null : nombre,apellido.isEmpty() ? null : apellido);
     }
     private static boolean esNombre(String value) {
         return !value.isEmpty() && value.length() <= 100 && value.matches("[a-zA-ZáéíóúÁÉÍÓÚñÑ ]+");

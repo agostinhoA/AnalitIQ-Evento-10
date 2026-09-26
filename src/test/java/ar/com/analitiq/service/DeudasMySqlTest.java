@@ -61,6 +61,19 @@ class DeudasMySqlTest {
         for(var paciente:s.buscar(CriterioBusqueda.validarEntrada("","","")))
             assertTrue(s.consultar(paciente.getDni(),filtros).getAvisos().isEmpty());
     }
+    @Test void identificacionParcialYHomonimosSinSeleccionImplicita() throws Exception {
+        for(var criterio:List.of(CriterioBusqueda.validar("nombre",null,"Juan",""),
+                                CriterioBusqueda.validar("nombre",null,"","Pérez"))) {
+            assertEquals(2,s.buscar(criterio).size());
+            var filtros=filtro(null,null,"");
+            var resultado=s.buscarAgrupado(criterio,filtros);
+            assertEquals(List.of("30111222"),resultado.getPacientes().stream().map(Paciente::getDni).toList());
+            var sesion=new BusquedaSesion();
+            var ahora=java.time.Instant.now();
+            assertNull(sesion.obtener(sesion.agregar(resultado,filtros,criterio,ahora),ahora).getDni());
+        }
+        assertTrue(s.buscar(CriterioBusqueda.validar("nombre",null,"Juan","Molina")).isEmpty());
+    }
     @Test void listaCompletaYBusquedasReales() throws Exception {
         assertEquals(10,s.buscar(CriterioBusqueda.validarEntrada("","","")).size());
         assertEquals(1,s.buscar(CriterioBusqueda.validarEntrada("45000001","","")).size());

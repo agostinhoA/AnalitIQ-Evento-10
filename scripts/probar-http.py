@@ -58,6 +58,40 @@ class FlujosHttp(unittest.TestCase):
     def setUp(self):
         self.b = Browser()
 
+    def test_modos_activos_y_campos_ocultos(self):
+        for mode in ['all', 'advanced']:
+            status, body, _, _ = self.b.post(accion='buscar', searchMode=mode, dni='99999999', nombre='Nadie')
+            self.assertEqual(200,status)
+            self.assertIn('30111222',body)
+            self.assertIn('45000001',body)
+        for mode, fields in [('dni', {'dni':'30111222','nombre':'Nadie'}),
+                             ('name', {'nombre':'Juan','dni':'45000001'}),
+                             ('name', {'apellido':'Pérez'}),
+                             ('name', {'nombre':'Juan','apellido':'Pérez'})]:
+            status, body, _, _ = self.b.post(accion='buscar', searchMode=mode, tratamiento='Implante', desde='9999-01-01', **fields)
+            self.assertEqual(200,status)
+            self.assertIn('30111222',body)
+            self.assertNotIn('45000001',body)
+        for mode in ['dni','name']:
+            self.assertEqual(400,self.b.post(accion='buscar',searchMode=mode)[0])
+        self.assertIn('No se encontró un paciente registrado con ese DNI', self.b.post(accion='buscar',searchMode='dni',dni='99999999')[1])
+
+    def test_modos_filtros_adicionales_y_fechas_abiertas(self):
+        for fields, expected in [({'tratamiento':'Implante'}, ['2308']),
+                                 ({'desde':'2026-12-01'}, ['2308']),
+                                 ({'hasta':'2026-08-31'}, ['2301']),
+                                 ({'desde':'2026-09-01','hasta':'2026-09-15'}, ['2302','2303']),
+                                 ({'tratamiento':'Ortodoncia','desde':'2026-09-01','hasta':'2026-09-15'}, ['2302','2303'])]:
+            for mode in ['advanced','dni','name']:
+                identity = {'dni':'45000001'} if mode=='dni' else {'apellido':'Molina'} if mode=='name' else {}
+                status, body, url, _ = self.b.post(accion='buscar', searchMode=mode, additionalFilters='true', **identity, **fields)
+                self.assertEqual(200,status)
+                if mode!='dni':
+                    status, body, _, _ = self.b.post(accion='seleccionar',busqueda=flujo(url),dni='45000001')
+                self.assertEqual(expected,cuotas(body))
+        self.assertEqual(400,self.b.post(accion='buscar',searchMode='advanced',desde='2026-10-01',hasta='2026-09-01')[0])
+        self.assertIn('No se encontraron cuotas pendientes', self.b.post(accion='buscar',searchMode='name',nombre='Juan',apellido='Molina')[1])
+
     def test_dni_unico_excluye_consultas_y_pagadas(self):
         status, body, _, headers = self.b.search(dni='30111222', tipo='CONSULTAS', estado='Pagada')
         self.assertEqual(200, status)
@@ -73,7 +107,7 @@ class FlujosHttp(unittest.TestCase):
     def test_nombre_sin_cuotas_pendientes_no_se_ofrece(self):
         status, body, _, _ = self.b.search(nombre='Lucía', apellido='Gómez')
         self.assertEqual(200, status)
-        self.assertIn('No se encontraron pacientes con cuotas pendientes', body)
+        self.assertIn('No se encontraron cuotas pendientes', body)
         self.assertNotIn('32444555', body)
         self.assertEqual({}, bloques(body))
         self.assertNotIn('report-header', body)
@@ -132,7 +166,7 @@ class FlujosHttp(unittest.TestCase):
         for fields in [{'dni': '99999999'}, {'nombre': 'Nadie', 'apellido': 'Inexistente'}]:
             status, body, _, _ = self.b.search(tratamiento='Ortodoncia', **fields)
             self.assertEqual(200, status)
-            self.assertIn('No se encontraron pacientes', body)
+            self.assertTrue('No se encontraron cuotas pendientes' in body or 'No se encontró un paciente registrado' in body)
             self.assertIn('value="2026-09-01"', body)
             self.assertIn('value="2026-09-30"', body)
             self.assertIn('value="Ortodoncia"', body)
@@ -148,7 +182,7 @@ class FlujosHttp(unittest.TestCase):
         for text in ['30111222', '01/09/2026', 'Ortodoncia']:
             self.assertIn(text, body)
         self.assertNotIn('30999888', body)
-        self.assertEqual(['603'], cuotas(body))
+        self.assertEqual([], cuotas(body))
         status, listado, _, _ = self.b.get('/deudas?busqueda='+flujo(url)+'&vista=seleccionar')
         self.assertEqual(200, status)
         self.assertEqual(1, len(re.findall(r'class="patient-option"', listado)))
@@ -239,7 +273,7 @@ class FlujosHttp(unittest.TestCase):
         self.assertEqual(['2308'], cuotas(body))
         status, body, _, _ = self.b.search(dni='45000001', tratamiento='Conducto')
         self.assertEqual(200, status)
-        self.assertIn('No se encontraron pacientes con cuotas pendientes', body)
+        self.assertIn('No se encontraron cuotas pendientes', body)
         for nombre in ['No existe', "%' OR 1=1 --"]:
             status, body, _, _ = self.b.search(dni='45000001', tratamiento=nombre)
             self.assertEqual(400, status)
@@ -276,7 +310,7 @@ class FlujosHttp(unittest.TestCase):
             self.assertEqual(200, status)
             self.assertEqual({}, bloques(body))
             self.assertNotIn('Inconsistencia:', body)
-            self.assertIn('No se encontraron pacientes con cuotas pendientes', body)
+            self.assertIn('No se encontraron cuotas pendientes', body)
             self.assertNotIn('máximo permitido', body)
 
     def test_tratamiento_ignora_mayusculas_y_conserva_filtro(self):
@@ -292,7 +326,7 @@ class FlujosHttp(unittest.TestCase):
     def test_sin_deudas_con_identificacion_y_rango(self):
         for dni in ['30999888','35666777','45000002','37888999','40123456']:
             _, body, _, _ = self.b.search(dni=dni)
-            self.assertIn('No se encontraron pacientes con cuotas pendientes', body)
+            self.assertIn('No se encontraron cuotas pendientes', body)
             self.assertEqual({}, bloques(body))
             self.assertNotIn('report-header', body)
 
@@ -306,7 +340,7 @@ class FlujosHttp(unittest.TestCase):
 
     def test_validacion_criterios_contradictorios_incompletos_escape(self):
         for fields in [{'dni': "' OR 1=1 --"}, {'nombre': '<script>alert(1)</script>', 'apellido':'Pérez'},
-                       {'nombre':'Juan'}, {'apellido':'Pérez'}, {'dni':'30111222','nombre':'Juan','apellido':'Pérez'},
+                       {'dni':'30111222','nombre':'Juan','apellido':'Pérez'},
                        {'dni':'30111222','nombre':'Juan'}, {'tratamiento':'x'*31}]:
             status, body, _, _ = self.b.search(**fields)
             self.assertEqual(400, status)

@@ -12,13 +12,13 @@ public final class BusquedaSesion implements Serializable {
     public static final Duration DURACION=Duration.ofMinutes(15);
     public synchronized String agregar(List<Paciente> pacientes, FiltrosDeuda filtros,
             CriterioBusqueda criterio, Instant ahora) {
-        String dni=!criterio.esListado() && pacientes.size()==1 ? pacientes.get(0).getDni() : null;
+        String dni=criterio.dni()!=null && pacientes.size()==1 ? pacientes.get(0).getDni() : null;
         return agregarFlujo(pacientes,Map.of(),filtros,criterio,ahora,dni);
     }
     public synchronized String agregar(ResultadoBusquedaDeudas resultado, FiltrosDeuda filtros,
             CriterioBusqueda criterio, Instant ahora) {
         List<Paciente> pacientes=resultado.getPacientes();
-        String dni=!criterio.esListado() && pacientes.size()==1 ? pacientes.get(0).getDni() : null;
+        String dni=criterio.dni()!=null && pacientes.size()==1 ? pacientes.get(0).getDni() : null;
         return agregarFlujo(pacientes,resultado.getGrupos(),filtros,criterio,ahora,dni);
     }
     private String agregarFlujo(List<Paciente> pacientes, Map<String,List<Paciente>> grupos, FiltrosDeuda filtros,

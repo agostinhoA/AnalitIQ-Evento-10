@@ -33,7 +33,7 @@ class BusquedaSesionTest {
     }
     @Test void seleccionUnicaConCriterioYVencimiento() {
         BusquedaSesion s=new BusquedaSesion(); String id=s.agregar(List.of(homonimos.get(0)),filtros,criterio,ahora);
-        assertEquals("30111222",s.obtener(id,ahora).getDni());
+        assertNull(s.obtener(id,ahora).getDni());
         assertThrows(IllegalArgumentException.class,()->s.obtener(id,ahora.plus(BusquedaSesion.DURACION)));
     }
     @Test void listaCompletaExigeSeleccionInclusoConUnSoloPaciente() {
@@ -56,8 +56,9 @@ class BusquedaSesionTest {
         assertTrue(CriterioBusqueda.validarEntrada("  ",null,"").esListado());
         for(String dni:List.of("1","123456789","' OR 1=1 --","30.111.222"))
             assertThrows(IllegalArgumentException.class,()->CriterioBusqueda.validarEntrada(dni,"",""));
-        assertThrows(IllegalArgumentException.class,()->CriterioBusqueda.validarEntrada("","Juan",""));
-        assertThrows(IllegalArgumentException.class,()->CriterioBusqueda.validarEntrada("","","Pérez"));
+        assertEquals("Juan",CriterioBusqueda.validarEntrada("","Juan","").nombre());
+        assertEquals("Pérez",CriterioBusqueda.validarEntrada("","","Pérez").apellido());
+        assertThrows(IllegalArgumentException.class,()->CriterioBusqueda.validar("nombre","","",""));
         assertThrows(IllegalArgumentException.class,()->CriterioBusqueda.validarEntrada("","%","Pérez"));
         assertThrows(IllegalArgumentException.class,()->CriterioBusqueda.validarEntrada("30111222","Juan","Pérez"));
         assertThrows(IllegalArgumentException.class,()->CriterioBusqueda.validarEntrada("30111222","","Pérez"));

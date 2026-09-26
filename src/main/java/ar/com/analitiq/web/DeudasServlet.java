@@ -31,11 +31,11 @@ public final class DeudasServlet extends HttpServlet {
             BusquedaSesion.Flujo flujo=busquedas.obtener(id,Instant.now());
             contexto(req,id,flujo);
             if("seleccionar".equals(req.getParameter("vista"))) {
-                if(flujo.getPacientes().isEmpty()) req.setAttribute("mensaje","No se encontraron pacientes con cuotas pendientes para los filtros seleccionados.");
+                if(flujo.getPacientes().isEmpty()) req.setAttribute("mensaje","No se encontraron cuotas pendientes para los criterios seleccionados.");
                 vista(req,res,"seleccionar"); return;
             }
             if(flujo.getPacientes().isEmpty()) {
-                req.setAttribute("mensaje","No se encontraron pacientes con cuotas pendientes para los filtros seleccionados.");
+                req.setAttribute("mensaje","No se encontraron cuotas pendientes para los criterios seleccionados.");
                 vista(req,res,"buscar");
             } else if(flujo.getDni()==null) vista(req,res,"seleccionar");
             else mostrarInforme(req,res,flujo);
@@ -52,10 +52,23 @@ public final class DeudasServlet extends HttpServlet {
         try {
             String id;
             if("buscar".equals(action)) {
-                CriterioBusqueda criterio=CriterioBusqueda.validarEntrada(req.getParameter("dni"),req.getParameter("nombre"),req.getParameter("apellido"));
+                String modo=req.getParameter("searchMode");
+                CriterioBusqueda criterio;
+                if(modo==null) criterio=CriterioBusqueda.validarEntrada(req.getParameter("dni"),req.getParameter("nombre"),req.getParameter("apellido"));
+                else criterio=switch(modo) {
+                    case "all", "advanced" -> new CriterioBusqueda(null,null,null);
+                    case "dni" -> CriterioBusqueda.validar("dni",req.getParameter("dni"),null,null);
+                    case "name" -> CriterioBusqueda.validar("nombre",null,req.getParameter("nombre"),req.getParameter("apellido"));
+                    default -> throw new IllegalArgumentException("Elegí un modo de búsqueda válido.");
+                };
                 DeudasService service=obtenerServicio(req,res);
                 if(service==null) return;
-                FiltrosDeuda filtros=service.validarFiltro(filtrosEnviados(req));
+                boolean aplicarFiltros=modo==null || "advanced".equals(modo) || (!"all".equals(modo) && "true".equals(req.getParameter("additionalFilters")));
+                FiltrosDeuda filtros=service.validarFiltro(aplicarFiltros ? filtrosEnviados(req) : new FiltrosDeuda(RangoFechas.parse(null,null),null));
+                if(criterio.dni()!=null && service.buscar(criterio).isEmpty()) {
+                    req.setAttribute("mensaje","No se encontró un paciente registrado con ese DNI.");
+                    vista(req,res,"buscar"); return;
+                }
                 id=busquedas.agregar(service.buscarAgrupado(criterio,filtros),filtros,criterio,Instant.now());
             } else if("seleccionar".equals(action)) {
                 // El rango se toma del servidor, no de campos alterables del formulario.
@@ -89,6 +102,8 @@ public final class DeudasServlet extends HttpServlet {
         } catch(SQLException e) { dbError(req,res,e); }
     }
     private void contexto(HttpServletRequest req,String id,BusquedaSesion.Flujo flujo) {
+        req.setAttribute("searchModeValor",flujo.getCriterio().dni()!=null ? "dni" : !flujo.getCriterio().esListado() ? "name" : "advanced");
+        req.setAttribute("additionalFiltersValor",!flujo.getFiltros().getTratamiento().isEmpty() || !flujo.getRango().isSinLimites());
         req.setAttribute("busquedaId",id); req.setAttribute("flujo",flujo);
         req.setAttribute("desdeValor",flujo.getRango().getDesde()==null ? "" : flujo.getRango().getDesde().toString());
         req.setAttribute("hastaValor",flujo.getRango().getHasta()==null ? "" : flujo.getRango().getHasta().toString());
@@ -98,6 +113,8 @@ public final class DeudasServlet extends HttpServlet {
         req.setAttribute("apellidoValor",flujo.getCriterio().apellido());
     }
     private void valoresEnviados(HttpServletRequest req) {
+        req.setAttribute("searchModeValor",req.getParameter("searchMode"));
+        req.setAttribute("additionalFiltersValor","true".equals(req.getParameter("additionalFilters")));
         req.setAttribute("desdeValor",req.getParameter("desde"));
         req.setAttribute("hastaValor",req.getParameter("hasta"));
         req.setAttribute("tratamientoValor",req.getParameter("tratamiento"));
