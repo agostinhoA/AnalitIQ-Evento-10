@@ -125,8 +125,8 @@ class FlujosHttp(unittest.TestCase):
         self.assertEqual(200, status)
         self.assertEqual(['2308'], cuotas(body))
         self.assertEqual({'2102'}, set(bloques(body)))
-        self.assertIn('value="Implante"', body)
-        self.assertIn('value="2027-12-31"', body)
+        self.assertIn('<strong>Implante</strong>', body)
+        self.assertIn('31/12/2027', body)
 
     def test_encabezado_y_selector_comparten_catalogo(self):
         for path in ['/', '/deudas', '/tratamientos/registrar']:
@@ -190,9 +190,9 @@ class FlujosHttp(unittest.TestCase):
                                        tratamiento='Implante', desde='1900-01-01', hasta='1900-01-01')
         self.assertEqual(200, status)
         self.assertEqual(['603'], cuotas(body))
-        self.assertIn('value="Ortodoncia"', body)
-        self.assertIn('value="2026-09-01"', body)
-        self.assertNotIn('value="1900-01-01"', body)
+        self.assertIn('<strong>Ortodoncia</strong>', body)
+        self.assertIn('01/09/2026', body)
+        self.assertNotIn('01/01/1900', body)
 
     def test_dni_manipulado_no_accede_a_otro_paciente(self):
         _, _, url, _ = self.b.search()
@@ -201,6 +201,23 @@ class FlujosHttp(unittest.TestCase):
         self.assertIn('Seleccioná un paciente de los resultados', body)
         self.assertEqual([], cuotas(body))
         self.assertEqual(200, self.b.post(accion='seleccionar', busqueda=flujo(url), dni='45000001')[0])
+
+    def test_nombre_apellido_y_ambos_con_mayusculas_o_minusculas(self):
+        for nombre,apellido in [('juan',''),('JUAN',''),('','pérez'),('','PÉREZ'),('jUaN','pÉrEz')]:
+            status, body, url, _ = self.b.search(nombre=nombre,apellido=apellido,searchMode='name')
+            self.assertEqual(200,status)
+            self.assertIn('30111222',body)
+            status, body, _, _ = self.b.post(accion='seleccionar',busqueda=flujo(url),dni='30111222')
+            self.assertEqual(200,status)
+            self.assertEqual(['603'],cuotas(body))
+
+    def test_informe_sin_seccion_modificar_filtros(self):
+        status,body,_,_=self.b.search(dni='45000001')
+        self.assertEqual(200,status)
+        for texto in ['Modificar filtros','Aplicar filtro','value="filtrar"','name="desde"','name="hasta"']:
+            self.assertNotIn(texto,body)
+        self.assertIn('Cambiar paciente',body)
+        self.assertIn('Iniciar otra búsqueda',body)
 
     def test_solo_bloques_con_cuotas_y_tabla_solicitada(self):
         status, body, _, _ = self.b.search(dni='45000001', hasta='2026-09-15')

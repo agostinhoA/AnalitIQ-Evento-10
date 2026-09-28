@@ -146,7 +146,7 @@ Un paciente puede tener cualquier cantidad de tratamientos registrados, incluido
 
 **En esta computadora no hay que ejecutar SQL ni reimportar datos.** Por pedido del usuario se borraron y regeneraron los registros de `analitiq_demo` usando 02/04/05, con respaldo previo y sin cambiar el esquema. Hay 10 pacientes, 15 tratamientos y 14 cuotas; no hay activos duplicados por paciente y tipo. Ver [recarga de la demo](docs/recarga-datos-demo.md). En una instalación nueva, seguir la preparación anterior; 05 es opcional salvo para ejecutar todas las pruebas de integración.
 
-Búsqueda de nombres/apellidos exacta, incluyendo mayúsculas y tildes. El selector muestra los valores del catálogo, actualmente `Ortodoncia`, `Implante` y `Conducto`. Sólo se muestran pacientes con cuotas en estado Adeuda de tratamientos activos que coincidan con el tratamiento y las fechas opcionales. Un valor ajeno al catálogo se rechaza.
+Búsqueda por nombre, apellido o ambos sin distinguir mayúsculas y minúsculas: `juan`, `Juan` y `JUAN` coinciden. Se mantiene la comparación del texto completo y de las tildes. El selector muestra los valores del catálogo, actualmente `Ortodoncia`, `Implante` y `Conducto`. Sólo se muestran pacientes con cuotas en estado Adeuda de tratamientos activos que coincidan con el tratamiento y las fechas opcionales. Un valor ajeno al catálogo se rechaza.
 
 Salvo indicación distinta, usar **Desde 01/01/2026, Hasta 31/12/2027**, tratamiento vacío:
 
@@ -164,13 +164,14 @@ Salvo indicación distinta, usar **Desde 01/01/2026, Hasta 31/12/2027**, tratami
 | DNI `45000002`, `37888999`, `40123456` o `30999888` | No aparecen si no tienen cuotas pendientes dentro del rango |
 | DNI `45000003` o `45000004` | Eva/Nora no aparecen si no tienen cuotas pendientes dentro del rango |
 | DNI `99999999` o `Nadie` / `Inexistente` | “No se encontraron pacientes”; permite corregir los campos y no muestra el informe anterior |
-| DNI junto con nombre/apellido; sólo nombre; sólo apellido | HTTP 400 y explicación; no se interpreta como lista completa |
+| DNI junto con nombre/apellido | HTTP 400 y explicación; no se interpreta como lista completa |
+| Sólo nombre, sólo apellido o ambos, en mayúsculas o minúsculas | Encuentra las coincidencias completas, respetando los acentos |
 | Fechas vacías | Incluye todos los vencimientos; agrupa a los pacientes con cuotas pendientes por tratamiento |
 | Sólo Desde o sólo Hasta | Filtra desde esa fecha o hasta esa fecha, inclusive |
 | Fechas inválidas o Desde posterior a Hasta | HTTP 400; no se ejecuta una consulta con fechas inválidas |
 | Selección alterada para enviar el DNI de un paciente fuera de la lista filtrada | HTTP 400; sólo se permiten los pacientes recuperados por esa búsqueda |
 
-Tratamiento y fechas se guardan en el servidor durante la selección. Cambiar los campos ocultos o enviar otros filtros en esa solicitud no los reemplaza. “Modificar filtros” → “Aplicar filtro” conserva el paciente y crea otro flujo, sin alterar informes abiertos en otras pestañas. Un filtro inválido muestra un error y conserva el informe anterior, identificado con sus criterios. “Cambiar paciente” regresa a la lista de pacientes ya filtrados; “Iniciar otra búsqueda” abre un formulario nuevo. Cada flujo vence a los 15 minutos; la sesión a los 20 de inactividad.
+Tratamiento y fechas se guardan en el servidor durante la selección. Cambiar los campos ocultos o enviar otros filtros en esa solicitud no los reemplaza. El informe ya no muestra la sección “Modificar filtros”. Para elegir otros criterios, usar “Iniciar otra búsqueda”; “Cambiar paciente” regresa a la lista de pacientes ya filtrados. Cada flujo vence a los 15 minutos; la sesión a los 20 de inactividad.
 
 **Moneda:** ni cuotas ni presupuestos tienen un campo de moneda; sólo los pagos lo tienen. Los totales son sumas de importes registrados por tratamiento, sin símbolo monetario ni conversiones. No se infiere la moneda de pagos excluidos del informe ni se suman pagos en distintas monedas. El modelo no permite certificar una totalización multimoneda: antes de incorporar esa posibilidad se necesita definir moneda de presupuesto/cuota y una migración explícita.
 
@@ -197,7 +198,7 @@ La suite prueba formularios/JSP/Servlet/MySQL reales, validación, lista filtrad
 
 Resultados con el evento 3: **33 pruebas Java, 10 HTTP de registro y 21 HTTP de regresión del evento 10 aprobadas**. Las escrituras se prueban exclusivamente en `analitiq_evento3_test`, usando una instancia de Tomcat en 8081. [Preparación y comandos](docs/evento3.md). Reportes en `target/surefire-reports` y detalles en [verificación](docs/verificacion.md).
 
-En la instalación local actual se ejecutaron **30 pruebas Java sin fallos** (7 de escritura omitidas por requerir `analitiq_evento3_test`) y **25 pruebas HTTP del evento 10 aprobadas** contra `http://127.0.0.1:8080/analitiq/`.
+En la verificación del 28/09/2026 se aprobaron **32 pruebas Java** y **29 pruebas HTTP del evento 10**, usando la base aislada `analitiq_evento3_test` y Tomcat en el puerto 8081. Se omitieron 7 pruebas Java de escritura, que requieren habilitación explícita. También se comprobó en la aplicación local del puerto 8080 la búsqueda de Ana López con nombre o apellido en distintas combinaciones de mayúsculas y minúsculas y la ausencia de la sección «Modificar filtros» en el informe.
 
 ## Estructura y mantenimiento
 

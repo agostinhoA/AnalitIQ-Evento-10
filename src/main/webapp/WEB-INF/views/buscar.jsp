@@ -19,7 +19,7 @@
 <div id="name-fields" class="identification-fields" hidden><div class="two-columns">
 <div><label for="nombre">Nombre</label><input class="field-medium" id="nombre" name="nombre" maxlength="100" placeholder="Ej. Juan" value="<c:out value='${nombreValor}'/>" aria-describedby="name-help search-error"></div>
 <div><label for="apellido">Apellido</label><input class="field-medium" id="apellido" name="apellido" maxlength="100" placeholder="Ej. Pérez" value="<c:out value='${apellidoValor}'/>" aria-describedby="name-help search-error"></div></div>
-<p class="range-help" id="name-help">Podés buscar por nombre, apellido o ambos. Si existen varias coincidencias, podrás seleccionar el paciente de la lista de resultados.</p></div>
+<p class="range-help" id="name-help">Podés buscar por nombre, apellido o ambos, con mayúsculas o minúsculas. Si existen varias coincidencias, podrás seleccionar el paciente de la lista de resultados.</p></div>
 </fieldset>
 <button id="toggle-filters" type="button" class="secondary" aria-expanded="false" aria-controls="optional-filters" hidden>+ Agregar filtros</button>
 <input type="hidden" id="additional-filters" name="additionalFilters" value="false">

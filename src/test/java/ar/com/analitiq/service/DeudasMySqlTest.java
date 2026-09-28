@@ -81,6 +81,16 @@ class DeudasMySqlTest {
         assertEquals(2,s.buscar(CriterioBusqueda.validarEntrada("","Juan","Pérez")).size());
         assertTrue(s.buscar(CriterioBusqueda.validarEntrada("99999999","","")).isEmpty());
     }
+    @Test void nombresYApellidosIgnoranMayusculasSinPerderHomonimos() throws Exception {
+        for(String[] entrada:List.of(new String[]{"juan",""},new String[]{"JUAN",""},
+                new String[]{"","pérez"},new String[]{"","PÉREZ"},new String[]{"jUaN","pÉrEz"})) {
+            var criterio=CriterioBusqueda.validar("nombre",null,entrada[0],entrada[1]);
+            assertEquals(List.of("30111222","30999888"),s.buscar(criterio).stream().map(Paciente::getDni).toList());
+            assertEquals(List.of("30111222"),s.buscarAgrupado(criterio,filtro(null,null,"")).getPacientes().stream().map(Paciente::getDni).toList());
+        }
+        assertTrue(s.buscar(CriterioBusqueda.validar("nombre",null,"ju","pérez")).isEmpty());
+        assertTrue(s.buscar(CriterioBusqueda.validar("nombre",null,"juan","perez")).isEmpty());
+    }
     @Test void pacientesConCuotasPendientesRespetanRangoYTratamiento() throws Exception {
         var todos=CriterioBusqueda.validarEntrada("","","");
         var septiembre=filtro("2026-09-01","2026-09-30","");

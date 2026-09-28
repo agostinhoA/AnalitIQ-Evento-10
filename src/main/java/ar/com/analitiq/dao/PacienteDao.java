@@ -22,8 +22,8 @@ public final class PacienteDao {
             WHERE t.activo='SI' AND ec.tipo_estado='Adeuda'
             """;
         if(criterio.dni()!=null) sql+=" AND p.dni_paciente=? ";
-        if(criterio.nombre()!=null) sql+=" AND p.nombre_paciente=? ";
-        if(criterio.apellido()!=null) sql+=" AND p.apellido_paciente=? ";
+        if(criterio.nombre()!=null) sql+=" AND LOWER(p.nombre_paciente)=LOWER(?) ";
+        if(criterio.apellido()!=null) sql+=" AND LOWER(p.apellido_paciente)=LOWER(?) ";
         if(filtros.getRango().getDesde()!=null) sql+=" AND cu.fecha_vencimiento>=? ";
         if(filtros.getRango().getHasta()!=null) sql+=" AND cu.fecha_vencimiento<=? ";
         if(!filtros.getTratamiento().isEmpty()) sql+=" AND LOWER(tt.nombre_tratamiento)=LOWER(?) ";
@@ -48,8 +48,8 @@ public final class PacienteDao {
     public List<Paciente> buscar(Connection c, CriterioBusqueda criterio) throws SQLException {
         String sql = "SELECT dni_paciente,nombre_paciente,apellido_paciente FROM pacientes WHERE 1=1";
         if(criterio.dni()!=null) sql+=" AND dni_paciente=?";
-        if(criterio.nombre()!=null) sql+=" AND nombre_paciente=?";
-        if(criterio.apellido()!=null) sql+=" AND apellido_paciente=?";
+        if(criterio.nombre()!=null) sql+=" AND LOWER(nombre_paciente)=LOWER(?)";
+        if(criterio.apellido()!=null) sql+=" AND LOWER(apellido_paciente)=LOWER(?)";
         sql+=" ORDER BY apellido_paciente,nombre_paciente,dni_paciente";
         try (PreparedStatement s = c.prepareStatement(sql)) {
             s.setQueryTimeout(10);

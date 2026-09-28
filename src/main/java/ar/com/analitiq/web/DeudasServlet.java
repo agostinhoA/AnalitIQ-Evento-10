@@ -145,7 +145,7 @@ public final class DeudasServlet extends HttpServlet {
         res.setStatus(status); req.setAttribute("mensaje",mensaje); vista(req,res,"error");
     }
     private void vista(HttpServletRequest req,HttpServletResponse res,String nombre) throws ServletException,IOException {
-        if("buscar".equals(nombre) || "informe".equals(nombre)) {
+        if("buscar".equals(nombre)) {
             DeudasService service=(DeudasService)getServletContext().getAttribute("deudasService");
             if(service!=null) {
                 try { req.setAttribute("tipos",service.catalogo()); }

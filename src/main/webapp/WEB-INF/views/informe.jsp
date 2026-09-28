@@ -6,11 +6,6 @@
 </section>
 <p class="applied-range">Tratamiento consultado: <strong><c:choose><c:when test="${empty informe.filtros.tratamiento}">Todos los activos</c:when><c:otherwise><c:out value="${informe.filtros.tratamiento}"/></c:otherwise></c:choose></strong></p>
 <c:if test="${not empty mensaje}"><div class="notice" role="alert"><c:out value="${mensaje}"/></div></c:if>
-<details class="panel filter-panel" ${not empty mensaje ? 'open' : ''}><summary>Modificar filtros</summary>
-<form method="post" action="<c:url value='/deudas'/>"><input type="hidden" name="accion" value="filtrar"><input type="hidden" name="csrf" value="<c:out value='${sessionScope.csrf}'/>"><input type="hidden" name="busqueda" value="<c:out value='${busquedaId}'/>">
-<%@ include file="tratamiento.jspf" %>
-<%@ include file="rango.jspf" %>
-<div class="form-footer"><span>Se conserva el paciente seleccionado.</span><button type="submit">Aplicar filtro</button></div></form></details>
 <c:forEach var="aviso" items="${informe.avisos}"><div class="notice" role="alert"><c:out value="${aviso}"/></div></c:forEach>
 <section class="report-section" aria-label="Deudas por tratamiento">
 <c:if test="${empty informe.tratamientos}"><div class="empty" role="status">No se encontraron cuotas pendientes para los criterios seleccionados</div></c:if>
