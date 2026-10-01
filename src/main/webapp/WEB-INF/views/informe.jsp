@@ -10,7 +10,7 @@
 <section class="report-section" aria-label="Deudas por tratamiento">
 <c:if test="${empty informe.tratamientos}"><div class="empty" role="status">No se encontraron cuotas pendientes para los criterios seleccionados</div></c:if>
 <c:forEach var="bloque" items="${informe.tratamientos}"><article class="panel treatment" data-tratamiento="<c:out value='${bloque.tratamiento.codigo}'/>">
-<div class="section-heading"><h2><c:out value="${bloque.tratamiento.nombre}"/></h2><span class="badge">Tratamiento #<c:out value="${bloque.tratamiento.codigo}"/> · Activo</span></div>
+<div class="section-heading"><h2><c:out value="${bloque.tratamiento.nombre}"/></h2></div>
 <div class="table-wrap"><table><caption class="sr-only">Cuotas pendientes de <c:out value="${bloque.tratamiento.nombre}"/></caption><thead><tr><th>Cuota</th><th>Fecha de vencimiento</th><th class="amount">Saldo pendiente</th></tr></thead><tbody>
 <c:forEach var="cuota" items="${bloque.cuotas}"><tr data-cuota="<c:out value='${cuota.codigo}'/>"><td><c:out value="${cuota.numero}"/></td><td><fmt:formatDate value="${cuota.vencimiento}" pattern="dd/MM/yyyy"/></td><td class="numeric amount"><fmt:formatNumber value="${cuota.monto}" minFractionDigits="2" maxFractionDigits="2"/></td></tr></c:forEach>
 </tbody></table></div>

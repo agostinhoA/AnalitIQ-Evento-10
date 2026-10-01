@@ -28,6 +28,12 @@ El script verifica la identidad y fecha de inicio del proceso antes de detenerlo
 
 ## Volver a compartir
 
+Desde el 30/09/2026, se puede abrir `Compartir-AnalitIQ.cmd` en la raíz del proyecto. Comprueba MySQL de WAMP y Tomcat público, los inicia si hace falta y verifica el acceso a la pantalla de deudas antes de mostrar y abrir el enlace. Windows puede solicitar permiso de administrador para iniciar MySQL. Si inicia Tomcat, el script existente despliega el WAR de `target/analitiq.war`; no recompila ni importa datos.
+
+También se puede ejecutar `./scripts/iniciar-enlace-publico.ps1`. Reutiliza el túnel registrado si funciona; si debe crear otro, guarda su proceso en `.local/public-tunnel-process.json` y la nueva URL en `.local/public-demo-url.txt`. El script de cierre continúa funcionando con ese registro. No configura inicio automático ni garantiza un dominio estable: después de apagar o suspender la computadora puede ser necesario volver a ejecutar el iniciador y compartir una URL nueva.
+
+Alternativa manual:
+
 Si Tomcat público está detenido, iniciarlo en una terminal (JDK 17, MySQL activo):
 
 ```powershell
