@@ -105,6 +105,7 @@ public final class DeudasServlet extends HttpServlet {
         req.setAttribute("searchModeValor",flujo.getCriterio().dni()!=null ? "dni" : !flujo.getCriterio().esListado() ? "name" : "advanced");
         req.setAttribute("additionalFiltersValor",!flujo.getFiltros().getTratamiento().isEmpty() || !flujo.getRango().isSinLimites());
         req.setAttribute("busquedaId",id); req.setAttribute("flujo",flujo);
+        req.setAttribute("tratamientosPorPaciente",flujo.getTratamientosPorPaciente());
         req.setAttribute("desdeValor",flujo.getRango().getDesde()==null ? "" : flujo.getRango().getDesde().toString());
         req.setAttribute("hastaValor",flujo.getRango().getHasta()==null ? "" : flujo.getRango().getHasta().toString());
         req.setAttribute("tratamientoValor",flujo.getFiltros().getTratamiento());

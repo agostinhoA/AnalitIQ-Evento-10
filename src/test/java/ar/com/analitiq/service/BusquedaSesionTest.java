@@ -50,6 +50,24 @@ class BusquedaSesionTest {
         for(int i=0;i<10;i++) s.agregar(homonimos,filtros,criterio,ahora);
         assertThrows(IllegalArgumentException.class,()->s.obtener(id,ahora));
     }
+    @Test void unPacientePorDniConSusTratamientosSinMezclarHomonimos() {
+        Map<String,List<Paciente>> grupos=new LinkedHashMap<>();
+        grupos.put("Implante",List.of(homonimos.get(0)));
+        grupos.put("Ortodoncia",homonimos);
+        var resultado=new ResultadoBusquedaDeudas(grupos);
+        var filtrosTodos=new FiltrosDeuda(RangoFechas.parse(null,null),"");
+        var s=new BusquedaSesion();
+        String id=s.agregar(resultado,filtrosTodos,criterio,ahora);
+        var flujo=s.obtener(id,ahora);
+        assertEquals(List.of("30111222","30999888"),flujo.getPacientes().stream().map(Paciente::getDni).toList());
+        assertEquals(List.of("Implante","Ortodoncia"),flujo.getTratamientosPorPaciente().get("30111222"));
+        assertEquals(List.of("Ortodoncia"),flujo.getTratamientosPorPaciente().get("30999888"));
+        String elegido=s.seleccionar(id,"30111222",ahora);
+        assertEquals(flujo.getTratamientosPorPaciente(),s.obtener(elegido,ahora).getTratamientosPorPaciente());
+        String filtrado=s.filtrar(elegido,new ResultadoBusquedaDeudas(Map.of("Ortodoncia",homonimos)),filtros,ahora);
+        assertEquals(List.of("Ortodoncia"),s.obtener(filtrado,ahora).getTratamientosPorPaciente().get("30111222"));
+        assertEquals(List.of("Implante","Ortodoncia"),s.obtener(id,ahora).getTratamientosPorPaciente().get("30111222"));
+    }
     @Test void validacionDeEntradasYConflictos() {
         assertEquals("30111222",CriterioBusqueda.validarEntrada(" 30111222 ","","").dni());
         assertEquals("Lucía",CriterioBusqueda.validarEntrada("","Lucía","Gómez").nombre());

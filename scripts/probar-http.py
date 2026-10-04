@@ -237,13 +237,17 @@ class FlujosHttp(unittest.TestCase):
         _, body, _, _ = self.b.search(dni='45000001', desde='2026-09-15', hasta='2026-09-15')
         self.assertEqual(['2303'], cuotas(body))
 
-    def test_sin_fechas_agrupa_pacientes_y_tratamiento_filtra(self):
+    def test_un_paciente_con_varios_tratamientos_y_filtros(self):
         status, body, url, _ = self.b.search(desde='', hasta='')
         self.assertEqual(200, status)
         self.assertIn('Sin límite de fechas', body)
-        self.assertIn('data-tratamiento="Implante"', body)
-        self.assertIn('data-tratamiento="Ortodoncia"', body)
-        self.assertEqual(2, body.count('name="dni" value="45000001"'))
+        tarjetas = re.findall(r'<form class="patient-option".*?</form>', body, re.S)
+        self.assertEqual(2, len(tarjetas))
+        sofia = next(t for t in tarjetas if 'name="dni" value="45000001"' in t)
+        self.assertEqual(['Implante','Ortodoncia'], re.findall(r'class="patient-treatment">(.*?)</span>', sofia))
+        juan = next(t for t in tarjetas if 'name="dni" value="30111222"' in t)
+        self.assertEqual(['Ortodoncia'], re.findall(r'class="patient-treatment">(.*?)</span>', juan))
+        self.assertEqual(1, body.count('name="dni" value="45000001"'))
         self.assertNotIn('45000004', body)  # Nora no tiene cuotas pendientes.
         _, informe, informe_url, _ = self.b.post(accion='seleccionar', busqueda=flujo(url), dni='45000001')
         self.assertEqual(['2301','2302','2303','2304','2305','2308'], cuotas(informe))
@@ -251,12 +255,15 @@ class FlujosHttp(unittest.TestCase):
         enlace = html.unescape(re.search(r'href="([^"]+)">Cambiar paciente</a>', informe).group(1))
         _, candidatos, _, _ = self.b.get(urllib.parse.urljoin(BASE+'/', enlace))
         self.assertIn('Sin límite de fechas', candidatos)
-        self.assertEqual(2, candidatos.count('class="patient-group"'))
+        self.assertEqual(2, candidatos.count('class="patient-option"'))
+        self.assertEqual(1, candidatos.count('name="dni" value="45000001"'))
         status, solo_implante, _, _ = self.b.search(tratamiento='Implante', desde='', hasta='')
         self.assertEqual(200, status)
-        self.assertEqual(1, solo_implante.count('class="patient-group"'))
-        self.assertIn('data-tratamiento="Implante"', solo_implante)
-        self.assertNotIn('data-tratamiento="Ortodoncia"', solo_implante)
+        self.assertEqual(1, solo_implante.count('class="patient-option"'))
+        self.assertEqual(['Implante'], re.findall(r'class="patient-treatment">(.*?)</span>', solo_implante))
+        _, septiembre, _, _ = self.b.search(nombre='Sofía',apellido='Molina',desde='2026-09-01',hasta='2026-09-30')
+        self.assertEqual(1, septiembre.count('class="patient-option"'))
+        self.assertEqual(['Ortodoncia'], re.findall(r'class="patient-treatment">(.*?)</span>', septiembre))
 
     def test_fecha_desde_o_hasta_independiente(self):
         _, body, _, _ = self.b.search(dni='45000001', desde='2026-12-01', hasta='')

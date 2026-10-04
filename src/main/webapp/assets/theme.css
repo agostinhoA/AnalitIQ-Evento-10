@@ -85,12 +85,12 @@ dd { font-size: 14px; }
 .filter-panel summary { color: #555d67; font-size: 14px; }
 .filter-panel summary::marker { color: var(--primary); }
 .patient-list { gap: 14px; margin: 24px 0; grid-template-columns: repeat(2,minmax(0,1fr)); }
-.patient-group + .patient-group { margin-top: 30px; }
-.patient-group > h3 { border-bottom: 1px solid var(--line); padding-bottom: 10px; margin-bottom: 0; }
 .patient-option { border-color: var(--line); padding: 22px; border-radius: 7px; gap: 18px; transition: border-color .15s,box-shadow .15s; min-width: 0; }
 .patient-option:hover { border-color: #d78d86; box-shadow: 0 3px 14px #c9322a09; }
 .patient-option h3 { overflow-wrap: anywhere; }
 .patient-option p { font-size: 13px; }
+.patient-info { min-width: 0; }
+.patient-option .patient-treatments { margin-top: 9px; line-height: 1.6; overflow-wrap: anywhere; }
 .patient-option button { font-size: 12px; padding: 9px 14px; flex-shrink: 0; }
 .report-section { margin: 26px 0; }
 .treatment { padding: 0; overflow: hidden; margin-bottom: 24px; }

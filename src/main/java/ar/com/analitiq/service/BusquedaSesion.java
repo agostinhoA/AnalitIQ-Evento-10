@@ -72,6 +72,14 @@ public final class BusquedaSesion implements Serializable {
         }
         public List<Paciente> getPacientes() { return pacientes; }
         public Map<String,List<Paciente>> getGrupos() { return grupos; }
+        public Map<String,List<String>> getTratamientosPorPaciente() {
+            Map<String,Set<String>> porDni=new LinkedHashMap<>();
+            grupos.forEach((nombre,miembros) -> miembros.forEach(p ->
+                porDni.computeIfAbsent(p.getDni(),k -> new LinkedHashSet<>()).add(nombre)));
+            Map<String,List<String>> resultado=new LinkedHashMap<>();
+            porDni.forEach((dni,nombres) -> resultado.put(dni,List.copyOf(nombres)));
+            return Collections.unmodifiableMap(resultado);
+        }
         public FiltrosDeuda getFiltros() { return filtros; }
         public RangoFechas getRango() { return filtros.getRango(); }
         public CriterioBusqueda getCriterio() { return criterio; }

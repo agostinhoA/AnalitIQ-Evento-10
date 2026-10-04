@@ -8,7 +8,7 @@ Proyecto Java web Maven, JSP/JSTL/EL, Servlets y JDBC. Implementa la especificac
 
 Se muestran únicamente cuotas en estado **Adeuda** de tratamientos con **activo = SI**. Las fechas **Desde** y **Hasta** son opcionales e independientes: si se ingresan, limitan los vencimientos de forma inclusiva; si quedan vacías, se consultan todos los vencimientos. **No hay corte por hoy**: una cuota futura se incluye mientras siga en Adeuda.
 
-El formulario admite DNI, nombre y apellido juntos, o identificación vacía para elegir entre todos los pacientes que tengan cuotas pendientes según los filtros aplicados. DNI y nombre/apellido simultáneos se rechazan. La lista agrupa a los pacientes por tratamiento; un paciente puede aparecer en más de un grupo si debe cuotas de distintos tipos. La lista exige selección incluso si contiene un único paciente; una búsqueda con criterio y una sola coincidencia genera el informe directamente. El tratamiento es opcional y se elige del mismo catálogo que usa Registrar tratamiento.
+El formulario permite buscar por DNI, nombre, apellido o ambos, y también listar los pacientes con cuotas pendientes sin identificación. La selección muestra una sola tarjeta por DNI, con nombre, apellido y los tratamientos con deuda que cumplen los filtros. Los homónimos con distintos DNI siguen siendo pacientes separados. Sólo la búsqueda por DNI continúa automáticamente al informe; los otros modos exigen selección incluso con una coincidencia. El tratamiento es opcional y se elige del mismo catálogo que usa Registrar tratamiento.
 
 El informe identifica una vez al paciente y los límites de fecha aplicados, si los hay; muestra un bloque por tratamiento con cuotas coincidentes y las columnas Cuota, Fecha de vencimiento y Saldo pendiente. Cada bloque incluye cantidad y suma exacta de sus filas con BigDecimal. No hay bloques vacíos, importes parciales ni operaciones de pago. Los estados se consultan por su relación y nombre, sin fijar IDs numéricos.
 
@@ -155,7 +155,7 @@ Salvo indicación distinta, usar **Desde 01/01/2026, Hasta 31/12/2027**, tratami
 | DNI `30111222` | Juan Pérez, Ortodoncia: cuota 3 (603), cantidad 1, total 30.000,00; cuotas pagadas y consultas excluidas |
 | Nombre `Lucía`, apellido `Gómez` | Si no tiene cuotas pendientes en el rango, no aparece en los resultados |
 | Nombre `Juan`, apellido `Pérez` | Sólo aparecen los homónimos con cuotas pendientes en el rango |
-| DNI, nombre y apellido vacíos | Lista agrupada por tratamiento de pacientes con cuotas pendientes para las fechas indicadas, cada uno con su DNI y botón Seleccionar; aún no se genera informe |
+| DNI, nombre y apellido vacíos | Lista de pacientes únicos por DNI con cuotas pendientes para las fechas indicadas; cada tarjeta muestra sus tratamientos coincidentes y un botón Seleccionar; aún no se genera informe |
 | DNI `45000001` | Sofía Molina: Ortodoncia con 5 cuotas, total 50.000,00; Implante con 1 cuota, total 20.000,00. No aparece el Conducto sin cuotas |
 | DNI `45000001`, tratamiento `Implante` | Sólo Implante, cuota 2 (2308), vence 01/12/2026, total 20.000,00; aparece aunque esa fecha sea posterior a hoy |
 | DNI `45000001`, tratamiento `Conducto` | No aparece en los resultados si no tiene cuotas pendientes de Conducto |
@@ -166,7 +166,7 @@ Salvo indicación distinta, usar **Desde 01/01/2026, Hasta 31/12/2027**, tratami
 | DNI `99999999` o `Nadie` / `Inexistente` | “No se encontraron pacientes”; permite corregir los campos y no muestra el informe anterior |
 | DNI junto con nombre/apellido | HTTP 400 y explicación; no se interpreta como lista completa |
 | Sólo nombre, sólo apellido o ambos, en mayúsculas o minúsculas | Encuentra las coincidencias completas, respetando los acentos |
-| Fechas vacías | Incluye todos los vencimientos; agrupa a los pacientes con cuotas pendientes por tratamiento |
+| Fechas vacías | Incluye todos los vencimientos; muestra cada paciente una vez con sus tratamientos con deuda |
 | Sólo Desde o sólo Hasta | Filtra desde esa fecha o hasta esa fecha, inclusive |
 | Fechas inválidas o Desde posterior a Hasta | HTTP 400; no se ejecuta una consulta con fechas inválidas |
 | Selección alterada para enviar el DNI de un paciente fuera de la lista filtrada | HTTP 400; sólo se permiten los pacientes recuperados por esa búsqueda |
