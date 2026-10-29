@@ -147,11 +147,10 @@ public final class DeudasServlet extends HttpServlet {
     }
     private void vista(HttpServletRequest req,HttpServletResponse res,String nombre) throws ServletException,IOException {
         if("buscar".equals(nombre)) {
-            DeudasService service=(DeudasService)getServletContext().getAttribute("deudasService");
-            if(service!=null) {
-                try { req.setAttribute("tipos",service.catalogo()); }
-                catch(SQLException e) { dbError(req,res,e); return; }
-            }
+            DeudasService service=obtenerServicio(req,res);
+            if(service==null) return;
+            try { req.setAttribute("tipos",service.catalogo()); }
+            catch(SQLException e) { dbError(req,res,e); return; }
         }
         req.getRequestDispatcher("/WEB-INF/views/"+nombre+".jsp").forward(req,res);
     }

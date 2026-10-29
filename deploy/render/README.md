@@ -103,6 +103,12 @@ El health check `/inicio` comprueba que Tomcat sirve la interfaz, no la conexió
 El estado Live por sí solo no prueba el funcionamiento del sistema: realizar una
 búsqueda y registrar un tratamiento para validar ambas conexiones y sus permisos.
 
+Los pools reintentan conectarse en segundo plano si MySQL no está disponible al
+arrancar. Una solicitud espera como máximo 30 segundos por una conexión. Si falla,
+la pantalla informa indisponibilidad; no presenta un catálogo vacío como si fuera
+un resultado válido. Un error persistente de credenciales o red requiere corregir
+la configuración en Render/Aiven.
+
 ## Límites y mantenimiento
 
 Render Free puede suspenderse después de 15 minutos sin tráfico; el primer acceso

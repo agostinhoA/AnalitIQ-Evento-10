@@ -29,11 +29,12 @@ public final class Database {
         cfg.setDriverClassName("com.mysql.cj.jdbc.Driver");
         cfg.setPoolName(registro ? "AnalitIQ-registro" : "AnalitIQ");
         cfg.setMaximumPoolSize(10); cfg.setMinimumIdle(1);
-        cfg.setConnectionTimeout(5000); cfg.setValidationTimeout(3000);
+        cfg.setConnectionTimeout(30000); cfg.setValidationTimeout(5000);
         cfg.setReadOnly(!registro);
-        cfg.addDataSourceProperty("connectTimeout", "5000");
-        cfg.addDataSourceProperty("socketTimeout", "15000");
-        cfg.setInitializationFailTimeout(1);
+        cfg.addDataSourceProperty("connectTimeout", "15000");
+        cfg.addDataSourceProperty("socketTimeout", "30000");
+        // Conservar el pool y sus reintentos si MySQL no responde al arrancar.
+        cfg.setInitializationFailTimeout(-1);
         return new HikariDataSource(cfg);
     }
     private static String value(Properties p, String key, String env) {
