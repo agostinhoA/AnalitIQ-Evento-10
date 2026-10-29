@@ -104,6 +104,9 @@ tbody tr:hover { background: #fafbfe; }
 .debt-summary { margin: 0; padding: 23px 28px; background: #f8f9fc; border-top: 1px solid var(--line); }
 .debt-summary dd { color: var(--primary); font-size: 26px; font-weight: 700; }
 .debt-summary dt { font-size: 12px; }
+.report-total { border-top: 3px solid var(--primary); margin-bottom: 20px; }
+.report-total .report-total-amount { color: var(--primary); font-size: 32px; font-weight: 700; margin: 12px 0; overflow-wrap: anywhere; }
+.report-total-note { color: var(--muted); margin: 0; }
 .empty { background: #fff; border: 1px solid var(--line); border-left: 3px solid #9da5b1; padding: 27px; color: #5b626c; font-size: 14px; }
 .footnote { font-size: 12px; line-height: 1.8; }
 .back-link { font-size: 14px; font-weight: 500; }

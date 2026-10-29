@@ -14,8 +14,13 @@
 <div class="table-wrap"><table><caption class="sr-only">Cuotas pendientes de <c:out value="${bloque.tratamiento.nombre}"/></caption><thead><tr><th>Cuota</th><th>Fecha de vencimiento</th><th class="amount">Saldo pendiente</th></tr></thead><tbody>
 <c:forEach var="cuota" items="${bloque.cuotas}"><tr data-cuota="<c:out value='${cuota.codigo}'/>"><td><c:out value="${cuota.numero}"/></td><td><fmt:formatDate value="${cuota.vencimiento}" pattern="dd/MM/yyyy"/></td><td class="numeric amount"><fmt:formatNumber value="${cuota.monto}" minFractionDigits="2" maxFractionDigits="2"/></td></tr></c:forEach>
 </tbody></table></div>
-<dl class="debt-summary"><div><dt>Cantidad de cuotas pendientes</dt><dd data-cantidad="<c:out value='${bloque.cantidad}'/>"><c:out value="${bloque.cantidad}"/></dd></div><div><dt>Total de deuda del tratamiento según los filtros</dt><dd class="numeric" data-total="<c:out value='${bloque.total}'/>"><fmt:formatNumber value="${bloque.total}" minFractionDigits="2" maxFractionDigits="2"/></dd></div></dl>
+<dl class="debt-summary"><div><dt>Cantidad de cuotas pendientes</dt><dd data-cantidad="<c:out value='${bloque.cantidad}'/>"><c:out value="${bloque.cantidad}"/></dd></div><div><dt>Subtotal adeudado</dt><dd class="numeric" data-total="<c:out value='${bloque.total}'/>"><fmt:formatNumber value="${bloque.total}" minFractionDigits="2" maxFractionDigits="2"/></dd></div></dl>
 </article></c:forEach></section>
+<section class="panel report-total" aria-labelledby="total-general-titulo">
+<h2 id="total-general-titulo">Total general adeudado</h2>
+<p class="numeric report-total-amount" data-total-general="<c:out value='${informe.totalGeneral}'/>"><fmt:formatNumber value="${informe.totalGeneral}" minFractionDigits="2" maxFractionDigits="2"/></p>
+<p class="report-total-note">Suma de los subtotales de los tratamientos incluidos en este informe, según los filtros seleccionados.</p>
+</section>
 <p class="footnote">Saldo pendiente: importe completo de cada cuota. Moneda no especificada en el modelo: los totales suman los importes registrados por tratamiento, sin conversiones.</p>
 <a class="back-link" href="<c:url value='/deudas'/>">← Iniciar otra búsqueda</a>
 <%@ include file="footer.jspf" %>
