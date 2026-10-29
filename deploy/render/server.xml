@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Server port="-1">
+  <Service name="Catalina">
+    <!-- Render termina HTTPS antes de enviar las solicitudes a este conector. -->
+    <Connector port="${analitiq.http.port}" address="0.0.0.0"
+               protocol="org.apache.coyote.http11.Http11NioProtocol"
+               connectionTimeout="20000" maxThreads="40" maxConnections="256"
+               URIEncoding="UTF-8" scheme="https" secure="true" proxyPort="443" />
+    <Engine name="Catalina" defaultHost="localhost">
+      <Host name="localhost" appBase="webapps" unpackWARs="true" autoDeploy="false" />
+    </Engine>
+  </Service>
+</Server>

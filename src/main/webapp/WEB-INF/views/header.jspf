@@ -12,9 +12,9 @@
 <header class="site-header"><div class="site-nav">
 <a class="brand" href="<c:url value='/inicio'/>" aria-label="AnalitIQ, inicio"><span class="brand-mark" aria-hidden="true">+</span>Analit<span>IQ</span></a>
 <nav aria-label="Principal">
-<a href="<c:url value='/inicio'/>" class="${seccion == 'inicio' ? 'nav-active' : ''}" aria-current="${seccion == 'inicio' ? 'page' : 'false'}">Inicio</a>
+<a href="<c:url value='/inicio'/>" class="${seccion == 'inicio' ? 'nav-active' : ''}" aria-current="${seccion == 'inicio' ? 'page' : 'false'}"><svg class="home-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 10 12 3l9 7M5 9v12h5v-7h4v7h5V9"/></svg><span>Inicio</span></a>
 </nav>
 <span class="site-status"><span class="dot" aria-hidden="true"></span>Gestión odontológica</span>
 </div></header>
 <div class="workspace"><div class="topbar"><span>AnalitIQ <span class="separator">/</span> <c:out value="${empty tituloPagina ? 'Informe de deudas' : tituloPagina}"/></span><c:if test="${empty seccion}"><span class="readonly">Sólo lectura</span></c:if></div>
-<main id="contenido"><div class="eyebrow">${empty seccion ? 'GESTIÓN FINANCIERA' : 'GESTIÓN ODONTOLÓGICA'}</div>
+<main id="contenido" class="${seccion == 'inicio' ? 'menu-page' : ''}"><div class="eyebrow">${empty seccion ? 'GESTIÓN FINANCIERA' : 'GESTIÓN ODONTOLÓGICA'}</div>

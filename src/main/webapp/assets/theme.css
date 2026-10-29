@@ -25,6 +25,7 @@ a { color: var(--primary); }
 .site-nav nav a { display: flex; align-items: center; padding: 0 4px; background: transparent; color: #454a52; border-radius: 0; border-bottom: 3px solid var(--primary); font-weight: 600; font-size: 14px; }
 .site-nav nav a:hover { color: var(--primary); text-decoration: none; }
 .nav-icon { width: 18px; height: 18px; margin-right: 10px; color: var(--primary); }
+.home-icon { width: 20px; height: 20px; margin-right: 8px; flex-shrink: 0; color: var(--primary); }
 .site-status { margin-left: auto; font-size: 12px; color: var(--muted); white-space: nowrap; }
 .site-status .dot { background: #767d88; width: 6px; height: 6px; }
 .workspace { margin: 0; min-height: calc(100vh - 87px); display: flex; flex-direction: column; }
@@ -174,6 +175,8 @@ footer { background: #fff; color: #6d7580; font-size: 12px; padding: 24px 32px; 
 .site-nav nav a { border-bottom-color: transparent; }
 .site-nav nav a.nav-active { border-bottom-color: var(--primary); color: var(--primary); }
 .menu-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 26px; margin: 36px 0 24px; }
+.menu-page > .eyebrow { justify-content: center; }
+.menu-page > h1,.menu-page > .lead { text-align: center; margin-left: auto; margin-right: auto; }
 .menu-card { display: flex; flex-direction: column; align-items: flex-start; padding: 36px; }
 .menu-number { font-size: 11px; letter-spacing: 1.4px; color: var(--primary); margin-bottom: 28px; font-weight: 650; }
 .menu-card h2 { font-size: 27px; margin-bottom: 16px; }

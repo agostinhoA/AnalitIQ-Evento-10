@@ -1,0 +1,11 @@
+# Solo el código y la configuración pública entran en la imagen.
+**
+!Dockerfile
+!pom.xml
+!src/
+!src/**
+!deploy/
+!deploy/render/
+!deploy/render/server.xml
+!deploy/render/context.xml
+!deploy/render/start.sh

@@ -1,0 +1,11 @@
+-- Solo en Aiven, como administrador, después de importar el esquema y migración 06.
+-- Copiar a un archivo privado fuera de Git y reemplazar las dos contraseñas.
+-- CREATE USER falla si la cuenta existe; no reemplaza usuarios existentes.
+-- El host % permite las IP de salida de Render; restringir además la red en Aiven.
+CREATE USER 'analitiq_lectura'@'%' IDENTIFIED BY 'REEMPLAZAR_CLAVE_LECTURA' REQUIRE SSL;
+GRANT SELECT ON analitiq_demo.* TO 'analitiq_lectura'@'%';
+CREATE USER 'analitiq_registro'@'%' IDENTIFIED BY 'REEMPLAZAR_CLAVE_REGISTRO' REQUIRE SSL;
+GRANT SELECT ON analitiq_demo.* TO 'analitiq_registro'@'%';
+GRANT INSERT (codigo_tipo_tratamiento,dni_paciente,fecha_inicio_tratamiento,
+ fecha_finalizacion_tratamiento_estimada,objetivos,pronostico,activo,token_registro)
+ ON analitiq_demo.tratamientos TO 'analitiq_registro'@'%';

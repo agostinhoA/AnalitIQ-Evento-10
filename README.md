@@ -224,6 +224,10 @@ Las JSP no contienen SQL ni scriptlets. Sólo presentan modelos con JSTL/EL; los
 
 ## Preparar la publicación y migrar la base
 
+Para publicar la demo con Java/Tomcat en Render Free y MySQL en Aiven Free, ver
+[la guía de despliegue](deploy/render/README.md). Incluye el Dockerfile, TLS y las
+variables de entorno. Crear los archivos no implica que el servicio esté desplegado.
+
 1. Elegir un servidor con JDK 17+, Tomcat 9 actualizado y MySQL 8.4+. Un hosting sólo PHP/Apache no puede ejecutar este WAR. No se ha contratado ni publicado un hosting.
 2. Para una demo nueva, importar estructura, datos ficticios y migración 06 en un esquema nuevo. Crear las cuentas de lectura y registro (ejemplos 03/07) restringidas al host donde corre Tomcat; no usar root ni abrir MySQL a todo internet.
 3. Para trasladar la demo con datos existentes, usar un respaldo consistente, por ejemplo `mysqldump -h HOST_ORIGEN -u USUARIO_RESPALDO -p --single-transaction --no-tablespaces --set-gtid-purged=OFF --result-file=analitiq-demo.sql analitiq_demo`. No exportar el esquema `mysql` ni cuentas/credenciales. Crear manualmente un esquema **nuevo y vacío** en destino con utf8mb4 y la colación acordada; importar el dump allí. No ejecutar el seed después del dump ni sobrescribir una base existente. Si el dump ya incluye 06, no repetir la migración. Recrear ambas cuentas por separado.

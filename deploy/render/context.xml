@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Context>
+  <CookieProcessor className="org.apache.tomcat.util.http.Rfc6265CookieProcessor"
+                   sameSiteCookies="lax" />
+  <!-- Un despliegue nuevo requiere iniciar una nueva búsqueda. -->
+  <Manager pathname="" />
+</Context>
