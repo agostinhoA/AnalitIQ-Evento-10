@@ -20,5 +20,5 @@
 </div><small id="texto-ayuda">Podés dejar ambos campos vacíos y completar sólo los datos obligatorios.</small></fieldset>
 <div class="form-footer"><a href="<c:url value='/inicio'/>">Volver al menú</a><button type="submit">Registrar tratamiento</button></div>
 </form></section>
-<aside class="help-card"><span class="help-icon" aria-hidden="true">+</span><h2>Un nuevo paso en la atención.</h2><p>El tratamiento se registrará como activo. El paciente puede tener distintos tipos de tratamiento, sin límite de cantidad.</p><hr><h3>Un activo por tipo</h3><p>Si ya tiene uno activo del tipo elegido, primero debe finalizarlo mediante el proceso correspondiente. Los tratamientos anteriores inactivos no impiden una nueva alta.</p><p>El presupuesto, las cuotas y los pagos se gestionan en sus respectivos eventos.</p></aside></div>
+<aside class="help-card"><span class="help-icon" aria-hidden="true">+</span><h2>Un nuevo paso en la atención.</h2><p>El tratamiento se registrará como activo.</p><hr><h3>Un activo por tipo</h3><p>Si ya tiene uno activo del tipo elegido, primero debe finalizarlo mediante el proceso correspondiente. Los tratamientos anteriores inactivos no impiden una nueva alta.</p><p>El presupuesto, las cuotas y los pagos se gestionan en sus respectivos eventos.</p></aside></div>
 <%@ include file="footer.jspf" %>
