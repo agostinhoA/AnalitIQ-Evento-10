@@ -5,8 +5,8 @@ import java.sql.*;
 import java.util.*;
 
 public final class DeudasDao {
-    /** Sin JOIN a pagos: una fila por cuota, con saldo completo y sin corte por hoy. */
-    public Map<Long,List<Cuota>> cuotasConDeuda(Connection c,String dni,FiltrosDeuda filtros) throws SQLException {
+    /** Una fila por cuota impaga con vencimiento dentro del rango y hasta el corte de la consulta. */
+    public Map<Long,List<Cuota>> cuotasVencidas(Connection c,String dni,FiltrosDeuda filtros) throws SQLException {
         String sql="""
             SELECT t.codigo_tratamiento,cu.codigo_cuota,cu.nro_cuota,cu.monto_cuota,
                    ec.tipo_estado,cu.fecha_vencimiento
@@ -17,8 +17,10 @@ public final class DeudasDao {
             JOIN estados_cuotas ec ON ec.codigo_estado_cuota=cu.codigo_estado_cuota
             WHERE t.dni_paciente=? AND t.activo=? AND ec.tipo_estado=?
             """;
-        if(filtros.getRango().getDesde()!=null) sql+=" AND cu.fecha_vencimiento>=? ";
-        if(filtros.getRango().getHasta()!=null) sql+=" AND cu.fecha_vencimiento<=? ";
+        var desde=filtros.getRango().getDesdeFecha();
+        var hasta=filtros.getHastaConsultaFecha();
+        if(desde!=null) sql+=" AND cu.fecha_vencimiento>=? ";
+        if(hasta!=null) sql+=" AND cu.fecha_vencimiento<=? ";
         boolean porNombre=!filtros.getTratamiento().isEmpty();
         if(porNombre) sql+=" AND LOWER(tt.nombre_tratamiento)=LOWER(?) ";
         sql+=" ORDER BY t.codigo_tratamiento,cu.fecha_vencimiento,cu.nro_cuota,cu.codigo_cuota";
@@ -26,8 +28,8 @@ public final class DeudasDao {
         try(PreparedStatement s=c.prepareStatement(sql)) {
             s.setString(1,dni); s.setString(2,"SI"); s.setString(3,"Adeuda");
             int index=4;
-            if(filtros.getRango().getDesde()!=null) s.setDate(index++,filtros.getRango().getDesdeFecha());
-            if(filtros.getRango().getHasta()!=null) s.setDate(index++,filtros.getRango().getHastaFecha());
+            if(desde!=null) s.setDate(index++,desde);
+            if(hasta!=null) s.setDate(index++,hasta);
             if(porNombre) s.setString(index,filtros.getTratamiento());
             s.setQueryTimeout(10);
             try(ResultSet r=s.executeQuery()) {

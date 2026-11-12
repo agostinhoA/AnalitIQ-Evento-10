@@ -14,7 +14,8 @@ class DeudasMySqlTest {
     private DeudasService s;
     @BeforeEach void abrir() throws Exception {
         assumeTrue(System.getenv("ANALITIQ_TEST_DEUDAS")!=null,"Requiere MySQL demo y scripts 04/05.");
-        ds=Database.open(); s=new DeudasService(ds);
+        ds=Database.open(); s=new DeudasService(ds,java.time.Clock.fixed(
+            java.time.Instant.parse("2026-12-01T15:00:00Z"),java.time.ZoneId.of("America/Argentina/Buenos_Aires")));
     }
     @AfterEach void cerrar() { if(ds!=null) ds.close(); }
     private FiltrosDeuda filtro(String desde,String hasta,String tratamiento) {
@@ -23,7 +24,7 @@ class DeudasMySqlTest {
     private List<Long> cuotas(InformeDeudas i) {
         return i.getTratamientos().stream().flatMap(t -> t.getCuotas().stream()).map(Cuota::getCodigo).toList();
     }
-    @Test void soloBloquesConDeudasSinCortePorHoyYTotalesCorrectos() throws Exception {
+    @Test void soloBloquesConCuotasAdeudadasYTotalesCorrectos() throws Exception {
         var i=s.consultar("45000001",filtro("2026-01-01","2027-12-31",""));
         assertEquals(List.of(2101L,2102L),i.getTratamientos().stream().map(t -> t.getTratamiento().getCodigo()).toList());
         assertEquals(List.of(2301L,2302L,2303L,2304L,2305L,2308L),cuotas(i));
@@ -102,16 +103,16 @@ class DeudasMySqlTest {
         assertEquals(List.of("45000001"),s.buscar(todos,filtro("2026-12-01","2026-12-01","Implante"))
             .stream().map(Paciente::getDni).toList());
     }
-    @Test void sinFechasAgrupaPorTratamientoYAdmiteUnLimite() throws Exception {
+    @Test void rangoExplicitoAgrupaPorTratamientoYAdmiteUnLimite() throws Exception {
         var todos=CriterioBusqueda.validarEntrada("","","");
-        var resultado=s.buscarAgrupado(todos,filtro("","",""));
+        var resultado=s.buscarAgrupado(todos,filtro("2026-01-01","2027-12-31",""));
         assertEquals(List.of("Implante","Ortodoncia"),List.copyOf(resultado.getGrupos().keySet()));
         assertEquals(List.of("45000001"),resultado.getGrupos().get("Implante").stream().map(Paciente::getDni).toList());
         assertEquals(List.of("45000001","30111222"),resultado.getGrupos().get("Ortodoncia").stream().map(Paciente::getDni).toList());
         assertEquals(List.of("45000001","30111222"),resultado.getPacientes().stream().map(Paciente::getDni).toList());
         assertTrue(resultado.getPacientes().stream().noneMatch(p -> p.getDni().equals("45000004")));
         assertEquals(List.of(2301L,2302L,2303L,2304L,2305L,2308L),
-            cuotas(s.consultar("45000001",filtro("","",""))));
+            cuotas(s.consultar("45000001",filtro("2026-01-01","2027-12-31",""))));
         assertEquals(List.of(2308L),cuotas(s.consultar("45000001",filtro("2026-12-01","",""))));
         assertEquals(List.of(2301L),cuotas(s.consultar("45000001",filtro("","2026-08-31",""))));
     }
@@ -119,5 +120,35 @@ class DeudasMySqlTest {
         assertEquals(List.of("Conducto","Implante","Ortodoncia"),s.catalogo().stream().map(TipoTratamiento::getNombre).toList());
         assertEquals("Ortodoncia",s.validarFiltro(filtro("2026-09-01","2026-09-30"," oRtOdOnCiA ")).getTratamiento());
         assertThrows(IllegalArgumentException.class,()->s.validarFiltro(filtro("2026-09-01","2026-09-30","No existe")));
+    }
+    @Test void aplicaElCorteDeVencimientoConYsinRangoExplicito() throws Exception {
+        var s=new DeudasService(ds,java.time.Clock.fixed(java.time.Instant.parse("2026-09-30T15:00:00Z"),
+            java.time.ZoneId.of("America/Argentina/Buenos_Aires")));
+        var todos=CriterioBusqueda.validarEntrada("","","");
+        var resultado=s.buscarAgrupado(todos,filtro("","",""));
+        assertEquals(List.of("Ortodoncia"),List.copyOf(resultado.getGrupos().keySet()));
+        assertEquals(List.of("45000001","30111222"),resultado.getPacientes().stream().map(Paciente::getDni).toList());
+        assertTrue(s.buscarAgrupado(todos,filtro("","","Implante")).getPacientes().isEmpty());
+        var informe=s.consultar("45000001",filtro("","",""));
+        assertEquals(List.of(2301L,2302L,2303L,2304L),cuotas(informe));
+        assertEquals(1,informe.getTratamientos().size());
+        assertEquals(new BigDecimal("40000.00"),informe.getTotalGeneral());
+        assertNull(informe.getRango().getHasta());
+        assertEquals(java.time.LocalDate.of(2026,9,30),informe.getFiltros().getFechaCorte());
+        var rangoAmplio=filtro("2026-09-01","2026-12-31","");
+        assertEquals(List.of(2302L,2303L,2304L),cuotas(s.consultar("45000001",rangoAmplio)));
+        var futuro=filtro("2026-10-01",null,"");
+        assertTrue(s.buscar(todos,futuro).isEmpty());
+        assertTrue(cuotas(s.consultar("45000001",futuro)).isEmpty());
+    }
+    @Test void variosActivosSumanSoloLosQueTienenDeudaAlDiaConsultado() throws Exception {
+        var service=new DeudasService(ds,java.time.Clock.fixed(java.time.Instant.parse("2026-12-01T15:00:00Z"),
+            java.time.ZoneId.of("America/Argentina/Buenos_Aires")));
+        var informe=service.consultar("45000001",filtro("","",""));
+        assertTrue(informe.getRango().isSinLimites());
+        assertEquals(List.of(2101L,2102L),informe.getTratamientos().stream().map(t->t.getTratamiento().getCodigo()).toList());
+        assertEquals(new BigDecimal("50000.00"),informe.getTratamientos().get(0).getTotal());
+        assertEquals(new BigDecimal("20000.00"),informe.getTratamientos().get(1).getTotal());
+        assertEquals(new BigDecimal("70000.00"),informe.getTotalGeneral());
     }
 }

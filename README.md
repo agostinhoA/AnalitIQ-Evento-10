@@ -6,11 +6,11 @@
 
 Proyecto Java web Maven, JSP/JSTL/EL, Servlets y JDBC. Implementa la especificación del **23/09/2026**, que tiene prioridad sobre el alcance anterior del coloquio y el TP. Conserva arquitectura, dependencias, Tomcat y configuración externa. El [rediseño visual](docs/rediseno-visual.md) usa blanco, gris oscuro y rojo, con navegación superior y adaptación a móvil.
 
-Se muestran únicamente cuotas en estado **Adeuda** de tratamientos con **activo = SI**. Las fechas **Desde** y **Hasta** son opcionales e independientes: si se ingresan, limitan los vencimientos de forma inclusiva; si quedan vacías, se consultan todos los vencimientos. **No hay corte por hoy**: una cuota futura se incluye mientras siga en Adeuda.
+La búsqueda y el informe consideran cuotas en estado **Adeuda** de tratamientos con **activo = SI** que vencen hasta el día de la consulta, inclusive (zona horaria Argentina). El corte se conserva durante la selección. Las fechas **Desde** y **Hasta** son opcionales y acotan ese conjunto por vencimiento, con límites inclusivos.
 
 El formulario permite buscar por DNI, nombre, apellido o ambos, y también listar los pacientes con cuotas pendientes sin identificación. La selección muestra una sola tarjeta por DNI, con nombre, apellido y los tratamientos con deuda que cumplen los filtros. Los homónimos con distintos DNI siguen siendo pacientes separados. Sólo la búsqueda por DNI continúa automáticamente al informe; los otros modos exigen selección incluso con una coincidencia. El tratamiento es opcional y se elige del mismo catálogo que usa Registrar tratamiento.
 
-El informe identifica una vez al paciente y los límites de fecha aplicados, si los hay; muestra un bloque por tratamiento con cuotas coincidentes y las columnas Cuota, Fecha de vencimiento y Saldo pendiente. Cada bloque incluye cantidad y suma exacta de sus filas con BigDecimal. No hay bloques vacíos, importes parciales ni operaciones de pago. Los estados se consultan por su relación y nombre, sin fijar IDs numéricos.
+El informe identifica al paciente por DNI y muestra un bloque por tratamiento con deuda. Cada bloque incluye el nombre del tratamiento, número de cuota, fecha de vencimiento, saldo pendiente, cantidad de cuotas vencidas y subtotal adeudado. El total adeudado suma los subtotales con BigDecimal.
 
 Rutas: `/inicio` (también `/`) abre el menú; `/tratamientos/registrar` abre el evento 3; `/deudas` y `/pagos` abren el informe del evento 10. Detalles: [evento 3](docs/evento3.md) y [evento 10](docs/evento10-2026-09-23.md). El TP y los documentos externos no fueron modificados.
 
@@ -166,7 +166,7 @@ Salvo indicación distinta, usar **Desde 01/01/2026, Hasta 31/12/2027**, tratami
 | DNI `99999999` o `Nadie` / `Inexistente` | “No se encontraron pacientes”; permite corregir los campos y no muestra el informe anterior |
 | DNI junto con nombre/apellido | HTTP 400 y explicación; no se interpreta como lista completa |
 | Sólo nombre, sólo apellido o ambos, en mayúsculas o minúsculas | Encuentra las coincidencias completas, respetando los acentos |
-| Fechas vacías | Incluye todos los vencimientos; muestra cada paciente una vez con sus tratamientos con deuda |
+| Fechas vacías | Incluye vencimientos hasta hoy (inclusive); muestra cada paciente una vez con sus tratamientos con deuda |
 | Sólo Desde o sólo Hasta | Filtra desde esa fecha o hasta esa fecha, inclusive |
 | Fechas inválidas o Desde posterior a Hasta | HTTP 400; no se ejecuta una consulta con fechas inválidas |
 | Selección alterada para enviar el DNI de un paciente fuera de la lista filtrada | HTTP 400; sólo se permiten los pacientes recuperados por esa búsqueda |
@@ -221,6 +221,35 @@ target/analitiq.war  artefacto generado
 ```
 
 Las JSP no contienen SQL ni scriptlets. Sólo presentan modelos con JSTL/EL; los datos se escapan con `c:out`. Los servlets manejan peticiones HTTP sucesivas y redirecciones 303. La aplicación usa consultas parametrizadas, cierre de recursos y pools separados: el evento 10 sólo lee; el evento 3 inserta tratamientos mediante su cuenta restringida. No hay datos ficticios incorporados en listas del código de producción.
+
+## Prueba de varios tratamientos adeudados
+
+El script opcional `database/09-multiples-tratamientos-con-deuda.sql` agrega dos
+pacientes ficticios sin modificar registros existentes. Requiere los catálogos y
+la migración 06. Importar una sola vez, sin `--force`, deteniendo ante errores.
+Los DNI 47000001/47000002, presupuestos 62101–62105 y cuotas 63101–63107 deben
+estar libres. Los tratamientos reciben códigos automáticos.
+
+Después de 09, el complemento opcional `database/10-cuotas-futuras-demo.sql`
+agrega una cuota futura a cada uno de los dos tratamientos adeudados de Lucía y
+actualiza sus presupuestos ficticios. Ejecutar una sola vez; reserva cuotas
+63108/63109. Cada tratamiento tendrá tres cuotas impagas, dos vencidas al
+11/11/2026 y una futura (Ortodoncia el 11/12/2026 e Implante el 12/12/2026).
+
+Con ambos scripts, al 11/11/2026, buscar por DNI dejando tratamiento y fechas vacíos:
+
+| DNI | Paciente | Subtotales adeudados | Total adeudado |
+|---|---|---|---|
+| 47000001 | Lucía Prado | Ortodoncia 20.000,00 e Implante 30.000,00 | 50.000,00 |
+| 47000002 | Tomás Vidal | Ortodoncia 12.000,00 y Conducto 8.000,00 | 20.000,00 |
+
+Lucía tiene además Conducto activo con una cuota pagada de 9.000,00: no debe
+aparecer ni sumarse en el informe. Cada tratamiento tiene un único presupuesto.
+Al 11/11/2026, cada tratamiento con deuda de Lucía muestra dos cuotas adeudadas.
+Las cuotas de diciembre ingresan al informe el día de su vencimiento si siguen impagas.
+Sin fechas ingresadas no se muestran las etiquetas Fecha desde/Fecha hasta.
+Con rango 01/11/2026–05/11/2026 para Lucía, se muestran ambas fechas,
+Ortodoncia 10.000,00 e Implante 15.000,00, total 25.000,00.
 
 ## Preparar la publicación y migrar la base
 

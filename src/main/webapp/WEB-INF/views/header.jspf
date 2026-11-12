@@ -16,5 +16,5 @@
 </nav>
 <span class="site-status"><span class="dot" aria-hidden="true"></span>Gestión odontológica</span>
 </div></header>
-<div class="workspace"><div class="topbar"><span>AnalitIQ <span class="separator">/</span> <c:out value="${empty tituloPagina ? 'Informe de deudas' : tituloPagina}"/></span><c:if test="${empty seccion}"><span class="readonly">Sólo lectura</span></c:if></div>
+<div class="workspace"><div class="topbar"><span>AnalitIQ <span class="separator">/</span> <c:out value="${empty tituloPagina ? 'Informe de deudas' : tituloPagina}"/></span></div>
 <main id="contenido" class="${seccion == 'inicio' ? 'menu-page' : ''}"><div class="eyebrow">${empty seccion ? 'GESTIÓN FINANCIERA' : 'GESTIÓN ODONTOLÓGICA'}</div>

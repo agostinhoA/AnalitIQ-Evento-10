@@ -11,8 +11,8 @@ import java.time.Instant;
 import java.util.*;
 
 /** /pagos conserva enlaces previos, pero ejecuta exclusivamente el evento de deudas. */
-@WebServlet(urlPatterns={"/deudas","/pagos"},loadOnStartup=1)
-public final class DeudasServlet extends HttpServlet {
+@WebServlet(name="Consulta_Deudas_Servlet",urlPatterns={"/deudas","/pagos"},loadOnStartup=1)
+public final class Controlador_Consulta_De_Deudas extends HttpServlet {
     private BusquedaSesion estado(HttpServletRequest req) {
         HttpSession session=req.getSession();
         synchronized(session) {
@@ -105,6 +105,7 @@ public final class DeudasServlet extends HttpServlet {
         req.setAttribute("searchModeValor",flujo.getCriterio().dni()!=null ? "dni" : !flujo.getCriterio().esListado() ? "name" : "advanced");
         req.setAttribute("additionalFiltersValor",!flujo.getFiltros().getTratamiento().isEmpty() || !flujo.getRango().isSinLimites());
         req.setAttribute("busquedaId",id); req.setAttribute("flujo",flujo);
+        req.setAttribute("lista_pacientes",flujo.getPacientes());
         req.setAttribute("tratamientosPorPaciente",flujo.getTratamientosPorPaciente());
         req.setAttribute("desdeValor",flujo.getRango().getDesde()==null ? "" : flujo.getRango().getDesde().toString());
         req.setAttribute("hastaValor",flujo.getRango().getHasta()==null ? "" : flujo.getRango().getHasta().toString());
@@ -130,7 +131,7 @@ public final class DeudasServlet extends HttpServlet {
             throws SQLException,ServletException,IOException {
         DeudasService service=obtenerServicio(req,res);
         if(service==null) return;
-        req.setAttribute("informe",service.consultar(flujo.getDni(),flujo.getFiltros()));
+        req.setAttribute("informe_deudas_tratamiento_paciente",service.consultar(flujo.getDni(),flujo.getFiltros()));
         vista(req,res,"informe");
     }
     private DeudasService obtenerServicio(HttpServletRequest req,HttpServletResponse res) throws ServletException,IOException {
@@ -152,6 +153,13 @@ public final class DeudasServlet extends HttpServlet {
             try { req.setAttribute("tipos",service.catalogo()); }
             catch(SQLException e) { dbError(req,res,e); return; }
         }
-        req.getRequestDispatcher("/WEB-INF/views/"+nombre+".jsp").forward(req,res);
+        String archivo=switch(nombre) {
+            case "buscar" -> "VistaJSP_Recibir_solicitud_de_Informe_Deuda.jsp";
+            case "seleccionar" -> "VistaJSP_Obtener_Datos_Para_Consulta_Deudas.jsp";
+            case "informe" -> "VistaJSP_Ver_Informe_De_Deudas.jsp";
+            case "error" -> "error.jsp";
+            default -> throw new IllegalArgumentException("Vista desconocida.");
+        };
+        req.getRequestDispatcher("/WEB-INF/views/"+archivo).forward(req,res);
     }
 }

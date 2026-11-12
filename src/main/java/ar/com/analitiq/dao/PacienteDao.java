@@ -24,8 +24,10 @@ public final class PacienteDao {
         if(criterio.dni()!=null) sql+=" AND p.dni_paciente=? ";
         if(criterio.nombre()!=null) sql+=" AND LOWER(p.nombre_paciente)=LOWER(?) ";
         if(criterio.apellido()!=null) sql+=" AND LOWER(p.apellido_paciente)=LOWER(?) ";
-        if(filtros.getRango().getDesde()!=null) sql+=" AND cu.fecha_vencimiento>=? ";
-        if(filtros.getRango().getHasta()!=null) sql+=" AND cu.fecha_vencimiento<=? ";
+        var desde=filtros.getRango().getDesdeFecha();
+        var hasta=filtros.getHastaConsultaFecha();
+        if(desde!=null) sql+=" AND cu.fecha_vencimiento>=? ";
+        if(hasta!=null) sql+=" AND cu.fecha_vencimiento<=? ";
         if(!filtros.getTratamiento().isEmpty()) sql+=" AND LOWER(tt.nombre_tratamiento)=LOWER(?) ";
         sql+=" ORDER BY tt.nombre_tratamiento,p.apellido_paciente,p.nombre_paciente,p.dni_paciente";
         try(PreparedStatement s=c.prepareStatement(sql)) {
@@ -33,8 +35,8 @@ public final class PacienteDao {
             if(criterio.dni()!=null) s.setString(index++,criterio.dni());
             if(criterio.nombre()!=null) s.setString(index++,criterio.nombre());
             if(criterio.apellido()!=null) s.setString(index++,criterio.apellido());
-            if(filtros.getRango().getDesde()!=null) s.setDate(index++,filtros.getRango().getDesdeFecha());
-            if(filtros.getRango().getHasta()!=null) s.setDate(index++,filtros.getRango().getHastaFecha());
+            if(desde!=null) s.setDate(index++,desde);
+            if(hasta!=null) s.setDate(index++,hasta);
             if(!filtros.getTratamiento().isEmpty()) s.setString(index,filtros.getTratamiento());
             s.setQueryTimeout(10);
             try(ResultSet r=s.executeQuery()) {
